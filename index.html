@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Chat Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .chat-message {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #4ade80;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border: 2px solid white;
+        }
+        .profile-pic-upload {
+            opacity: 0;
+            position: absolute;
+            z-index: -1;
+        }
+        .profile-pic-label {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .profile-pic-label:hover {
+            transform: scale(1.05);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- Auth Modal -->
+    <div id="authModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800" id="authTitle">Login</h2>
+                <button onclick="toggleAuthModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="loginForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2" for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2" for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button onclick="login()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 mb-2">
+                    Login
+                </button>
+                <p class="text-center text-gray-600">
+                    Don't have an account? 
+                    <a href="#" onclick="showRegisterForm()" class="text-blue-600 hover:underline">Register</a>
+                </p>
+            </div>
+            
+            <div id="registerForm" class="hidden">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2" for="registerUsername">Username</label>
+                    <input type="text" id="registerUsername" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2" for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2" for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button onclick="register()" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-300 mb-2">
+                    Register
+                </button>
+                <p class="text-center text-gray-600">
+                    Already have an account? 
+                    <a href="#" onclick="showLoginForm()" class="text-blue-600 hover:underline">Login</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="appContainer" class="max-w-6xl mx-auto p-4 hidden">
+        <!-- Header -->
+        <header class="bg-white shadow-md rounded-lg p-4 mb-6 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="https://cdn-icons-png.flaticon.com/512/2452/2452499.png" alt="Chat Logo" class="h-10 w-10 mr-3">
+                <h1 class="text-2xl font-bold text-gray-800">Global Chat Hub</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <img id="currentUserAvatar" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profile" class="h-10 w-10 rounded-full cursor-pointer" onclick="toggleProfileDropdown()">
+                    <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+                        <div class="py-1">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="showProfileSettings()">
+                                <i class="fas fa-user-cog mr-2"></i> Profile Settings
+                            </a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="showFriendRequests()">
+                                <i class="fas fa-user-friends mr-2"></i> Friend Requests
+                            </a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="logout()">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <span id="currentUsername" class="font-medium text-gray-700">Guest</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- Sidebar -->
+            <div class="w-full md:w-1/4 bg-white rounded-lg shadow-md p-4">
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Friends</h2>
+                    <div class="relative">
+                        <input type="text" placeholder="Search friends..." class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-medium text-gray-700">Online Friends</h3>
+                        <span id="onlineCount" class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">0</span>
+                    </div>
+                    <div id="onlineFriendsList" class="space-y-2">
+                        <!-- Online friends will be added here dynamically -->
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-medium text-gray-700">All Friends</h3>
+                        <span id="friendsCount" class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">0</span>
+                    </div>
+                    <div id="friendsList" class="space-y-2">
+                        <!-- All friends will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="w-full md:w-3/4 bg-white rounded-lg shadow-md overflow-hidden">
+                <!-- Chat Header -->
+                <div class="bg-gray-800 text-white p-4 flex items-center">
+                    <div id="chatHeaderInfo" class="flex items-center">
+                        <i class="fas fa-globe text-xl mr-3"></i>
+                        <h2 class="text-xl font-semibold">Global Chat</h2>
+                    </div>
+                    <div class="ml-auto flex space-x-2">
+                        <button id="globalChatBtn" class="px-3 py-1 bg-blue-600 rounded-md text-sm font-medium active-tab">
+                            <i class="fas fa-globe mr-1"></i> Global
+                        </button>
+                        <button id="privateChatBtn" class="px-3 py-1 bg-gray-600 rounded-md text-sm font-medium">
+                            <i class="fas fa-user-friends mr-1"></i> Private
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Chat Content -->
+                <div class="h-96 overflow-y-auto p-4 bg-gray-50" id="chatMessages">
+                    <!-- Messages will be added here dynamically -->
+                    <div class="text-center text-gray-500 py-10">
+                        <i class="fas fa-comments text-4xl mb-2"></i>
+                        <p>Start chatting with people around the world!</p>
+                    </div>
+                </div>
+                
+                <!-- Message Input -->
+                <div class="p-4 border-t border-gray-200 bg-white">
+                    <div class="flex items-center">
+                        <input type="text" id="messageInput" placeholder="Type your message..." class="flex-1 px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="sendMessage()" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition duration-300">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Settings Modal -->
+    <div id="profileModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Profile Settings</h2>
+                <button onclick="hideProfileSettings()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="flex flex-col items-center mb-6">
+                <div class="relative mb-4">
+                    <input type="file" id="profilePicUpload" accept="image/*" class="profile-pic-upload">
+                    <label for="profilePicUpload" class="profile-pic-label">
+                        <img id="profilePicPreview" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profile" class="h-24 w-24 rounded-full object-cover border-4 border-blue-200">
+                    </label>
+                    <div class="text-center mt-2">
+                        <span class="text-blue-600 text-sm cursor-pointer" onclick="document.getElementById('profilePicUpload').click()">Change Photo</span>
+                    </div>
+                </div>
+                
+                <div class="w-full mb-4">
+                    <label class="block text-gray-700 mb-2" for="profileUsername">Username</label>
+                    <input type="text" id="profileUsername" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div class="w-full mb-4">
+                    <label class="block text-gray-700 mb-2">Gender</label>
+                    <div class="flex space-x-4">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="gender" value="male" class="form-radio text-blue-600">
+                            <span class="ml-2">Male</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="gender" value="female" class="form-radio text-pink-600">
+                            <span class="ml-2">Female</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="gender" value="other" class="form-radio text-purple-600">
+                            <span class="ml-2">Other</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="w-full mb-4">
+                    <label class="block text-gray-700 mb-2" for="profileBio">Bio</label>
+                    <textarea id="profileBio" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                
+                <button onclick="updateProfile()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Friend Requests Modal -->
+    <div id="friendRequestsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Friend Requests</h2>
+                <button onclick="hideFriendRequests()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="friendRequestsList" class="space-y-3">
+                <!-- Friend requests will be added here dynamically -->
+                <div class="text-center py-10 text-gray-500">
+                    <i class="fas fa-user-friends text-4xl mb-2"></i>
+                    <p>No pending friend requests</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Friend Modal -->
+    <div id="addFriendModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Add Friend</h2>
+                <button onclick="hideAddFriendModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2" for="friendUsername">Username</label>
+                <div class="flex">
+                    <input type="text" id="friendUsername" placeholder="Enter username" class="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="searchUser()" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition duration-300">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="searchResults" class="space-y-3">
+                <!-- Search results will be added here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // User data structure with all required fields
+        let users = [
+            { 
+                id: 1, 
+                username: 'john_doe', 
+                password: 'password123', 
+                avatar: 'https://randomuser.me/api/portraits/men/1.jpg', 
+                gender: 'male', 
+                bio: 'Hello world!', 
+                online: true,
+                friends: [2], 
+                friendRequests: [] 
+            },
+            { 
+                id: 2, 
+                username: 'jane_smith', 
+                password: 'password123', 
+                avatar: 'https://randomuser.me/api/portraits/women/1.jpg', 
+                gender: 'female', 
+                bio: 'Nice to meet you!', 
+                online: true,
+                friends: [1], 
+                friendRequests: [] 
+            },
+            { 
+                id: 3, 
+                username: 'bob_johnson', 
+                password: 'password123', 
+                avatar: 'https://randomuser.me/api/portraits/men/2.jpg', 
+                gender: 'male', 
+                bio: 'Chatting is fun!', 
+                online: false,
+                friends: [], 
+                friendRequests: [] 
+            }
+        ];
+
+        let currentUser = null;
+        let friends = [];
+        let friendRequests = [];
+        let messages = [];
+        let privateMessages = [];
+        let currentChat = 'global';
+        let selectedFriend = null;
+
+        // DOM Elements
+        const authModal = document.getElementById('authModal');
+        const appContainer = document.getElementById('appContainer');
+        const profileModal = document.getElementById('profileModal');
+        const friendRequestsModal = document.getElementById('friendRequestsModal');
+        const addFriendModal = document.getElementById('addFriendModal');
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const currentUsername = document.getElementById('currentUsername');
+        const currentUserAvatar = document.getElementById('currentUserAvatar');
+        const onlineFriendsList = document.getElementById('onlineFriendsList');
+        const friendsList = document.getElementById('friendsList');
+        const friendRequestsList = document.getElementById('friendRequestsList');
+        const searchResults = document.getElementById('searchResults');
+        const onlineCount = document.getElementById('onlineCount');
+        const friendsCount = document.getElementById('friendsCount');
+        const globalChatBtn = document.getElementById('globalChatBtn');
+        const privateChatBtn = document.getElementById('privateChatBtn');
+        const chatHeaderInfo = document.getElementById('chatHeaderInfo');
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show auth modal by default
+            toggleAuthModal();
+            
+            // Check if user is already logged in (for demo purposes)
+            const demoUser = localStorage.getItem('demoUser');
+            if (demoUser) {
+                currentUser = JSON.parse(demoUser);
+                initializeApp();
+            }
+
+            // Set up event listeners
+            globalChatBtn.addEventListener('click', () => switchChat('global'));
+            privateChatBtn.addEventListener('click', () => switchChat('private'));
+        });
+
+        // Auth Modal Functions
+        function toggleAuthModal() {
+            authModal.classList.toggle('hidden');
+        }
+
+        function showLoginForm() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('authTitle').textContent = 'Login';
+        }
+
+        function showRegisterForm() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('authTitle').textContent = 'Register';
+        }
+
+        function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) {
+                alert('Please enter both username and password');
+                return;
+            }
+            
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                currentUser = { ...user };
+                localStorage.setItem('demoUser', JSON.stringify(currentUser));
+                toggleAuthModal();
+                initializeApp();
+            } else {
+                alert('Invalid username or password');
+            }
+        }
+
+        function register() {
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (!username || !password || !confirmPassword) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+            
+            if (users.some(u => u.username === username)) {
+                alert('Username already exists');
+                return;
+            }
+            
+            const newUser = {
+                id: users.length + 1,
+                username,
+                password,
+                avatar: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+                gender: 'other',
+                bio: '',
+                online: true
+            };
+            
+            users.push(newUser);
+            currentUser = { ...newUser };
+            localStorage.setItem('demoUser', JSON.stringify(currentUser));
+            toggleAuthModal();
+            initializeApp();
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('demoUser');
+            appContainer.classList.add('hidden');
+            toggleAuthModal();
+            resetForms();
+        }
+
+        function resetForms() {
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('registerUsername').value = '';
+            document.getElementById('registerPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            showLoginForm();
+        }
+
+        // Main App Functions
+        function initializeApp() {
+            appContainer.classList.remove('hidden');
+            currentUsername.textContent = currentUser.username;
+            currentUserAvatar.src = currentUser.avatar;
+            
+            // For demo, add some friends and friend requests
+            if (currentUser.username === 'john_doe') {
+                friends = [users[1], users[2]];
+                friendRequests = [{ from: users[3], status: 'pending' }];
+            } else if (currentUser.username === 'jane_smith') {
+                friends = [users[0]];
+                friendRequests = [];
+            } else {
+                friends = [];
+                friendRequests = [];
+            }
+            
+            updateFriendsList();
+            updateFriendRequestsCount();
+            loadGlobalMessages();
+        }
+
+        function updateFriendsList() {
+            // Clear existing lists
+            onlineFriendsList.innerHTML = '';
+            friendsList.innerHTML = '';
+            
+            // Count online friends
+            let onlineCountValue = 0;
+            
+            // Add online friends
+            friends.forEach(friend => {
+                if (friend.online) {
+                    onlineCountValue++;
+                    const friendElement = createFriendElement(friend, true);
+                    onlineFriendsList.appendChild(friendElement);
+                }
+            });
+            
+            // Add all friends
+            friends.forEach(friend => {
+                const friendElement = createFriendElement(friend, false);
+                friendsList.appendChild(friendElement);
+            });
+            
+            // Update counters
+            onlineCount.textContent = onlineCountValue;
+            friendsCount.textContent = friends.length;
+            
+            // Add "Add Friend" button
+            const addFriendElement = document.createElement('div');
+            addFriendElement.className = 'flex items-center justify-between p-2 bg-gray-100 rounded-md cursor-pointer hover:bg-gray-200';
+            addFriendElement.innerHTML = `
+                <div class="flex items-center">
+                    <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <span class="ml-3 font-medium">Add Friend</span>
+                </div>
+            `;
+            addFriendElement.addEventListener('click', showAddFriendModal);
+            friendsList.appendChild(addFriendElement);
+        }
+
+        function createFriendElement(friend, isOnline) {
+            const friendElement = document.createElement('div');
+            friendElement.className = 'flex items-center justify-between p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100';
+            friendElement.addEventListener('click', () => startPrivateChat(friend));
+            
+            friendElement.innerHTML = `
+                <div class="flex items-center">
+                    <div class="relative">
+                        <img src="${friend.avatar}" alt="${friend.username}" class="h-10 w-10 rounded-full object-cover">
+                        ${isOnline ? '<div class="online-dot"></div>' : ''}
+                    </div>
+                    <div class="ml-3">
+                        <p class="font-medium">${friend.username}</p>
+                        <p class="text-xs text-gray-500">${friend.bio || 'No bio'}</p>
+                    </div>
+                </div>
+                ${isOnline ? '<span class="text-xs text-green-600">Online</span>' : '<span class="text-xs text-gray-500">Offline</span>'}
+            `;
+            
+            return friendElement;
+        }
+
+        function updateFriendRequestsCount() {
+            const pendingRequests = friendRequests.filter(req => req.status === 'pending').length;
+            const badge = document.createElement('span');
+            badge.className = 'absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center';
+            badge.textContent = pendingRequests;
+            
+            const existingBadge = document.querySelector('.friend-requests-badge');
+            if (existingBadge) {
+                existingBadge.remove();
+            }
+            
+            if (pendingRequests > 0) {
+                badge.classList.add('friend-requests-badge');
+                const profileButton = document.querySelector('[onclick="showFriendRequests()"]');
+                profileButton.parentNode.appendChild(badge);
+            }
+        }
+
+        // Chat Functions
+        function switchChat(type) {
+            currentChat = type;
+            
+            if (type === 'global') {
+                globalChatBtn.classList.add('active-tab');
+                globalChatBtn.classList.remove('bg-gray-600');
+                globalChatBtn.classList.add('bg-blue-600');
+                
+                privateChatBtn.classList.remove('active-tab');
+                privateChatBtn.classList.add('bg-gray-600');
+                privateChatBtn.classList.remove('bg-blue-600');
+                
+                chatHeaderInfo.innerHTML = '<i class="fas fa-globe text-xl mr-3"></i><h2 class="text-xl font-semibold">Global Chat</h2>';
+                loadGlobalMessages();
+            } else {
+                privateChatBtn.classList.add('active-tab');
+                privateChatBtn.classList.remove('bg-gray-600');
+                privateChatBtn.classList.add('bg-blue-600');
+                
+                globalChatBtn.classList.remove('active-tab');
+                globalChatBtn.classList.add('bg-gray-600');
+                globalChatBtn.classList.remove('bg-blue-600');
+                
+                if (selectedFriend) {
+                    chatHeaderInfo.innerHTML = `
+                        <img src="${selectedFriend.avatar}" alt="${selectedFriend.username}" class="h-8 w-8 rounded-full mr-3">
+                        <h2 class="text-xl font-semibold">${selectedFriend.username}</h2>
+                    `;
+                    loadPrivateMessages();
+                } else {
+                    chatHeaderInfo.innerHTML = '<i class="fas fa-user-friends text-xl mr-3"></i><h2 class="text-xl font-semibold">Private Chat</h2>';
+                    chatMessages.innerHTML = `
+                        <div class="text-center text-gray-500 py-10">
+                            <i class="fas fa-user-friends text-4xl mb-2"></i>
+                            <p>Select a friend to start chatting</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function startPrivateChat(friend) {
+            selectedFriend = friend;
+            switchChat('private');
+        }
+
+        function loadGlobalMessages() {
+            // For demo, create some sample messages
+            if (messages.length === 0) {
+                messages = [
+                    { id: 1, sender: users[0], text: 'Hello everyone!', timestamp: new Date(Date.now() - 3600000) },
+                    { id: 2, sender: users[1], text: 'Hi there! How are you all doing?', timestamp: new Date(Date.now() - 1800000) },
+                    { id: 3, sender: users[2], text: 'This chat app is pretty cool!', timestamp: new Date(Date.now() - 900000) }
+                ];
+            }
+            
+            renderMessages(messages);
+        }
+
+        function loadPrivateMessages() {
+            if (!selectedFriend) return;
+            
+            // For demo, create some sample private messages
+            const privateChatId = [currentUser.id, selectedFriend.id].sort().join('-');
+            let chat = privateMessages.find(c => c.id === privateChatId);
+            
+            if (!chat) {
+                chat = {
+                    id: privateChatId,
+                    participants: [currentUser, selectedFriend],
+                    messages: [
+                        { id: 1, sender: selectedFriend, text: `Hi ${currentUser.username}!`, timestamp: new Date(Date.now() - 3600000) },
+                        { id: 2, sender: currentUser, text: 'Hello there! How are you?', timestamp: new Date(Date.now() - 1800000) },
+                        { id: 3, sender: selectedFriend, text: "I'm doing great, thanks for asking!", timestamp: new Date(Date.now() - 900000) }
+                    ]
+                };
+                privateMessages.push(chat);
+            }
+            
+            renderMessages(chat.messages);
+        }
+
+        function renderMessages(messagesToRender) {
+            chatMessages.innerHTML = '';
+            
+            if (messagesToRender.length === 0) {
+                chatMessages.innerHTML = `
+                    <div class="text-center text-gray-500 py-10">
+                        <i class="fas fa-comments text-4xl mb-2"></i>
+                        <p>No messages yet. Be the first to say hello!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            messagesToRender.forEach(message => {
+                const isCurrentUser = message.sender.id === currentUser.id;
+                const messageElement = document.createElement('div');
+                messageElement.className = `chat-message mb-4 flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`;
+                
+                messageElement.innerHTML = `
+                    <div class="flex ${isCurrentUser ? 'flex-row-reverse' : ''} max-w-xs md:max-w-md">
+                        <img src="${message.sender.avatar}" alt="${message.sender.username}" class="h-8 w-8 rounded-full ${isCurrentUser ? 'ml-3' : 'mr-3'}">
+                        <div>
+                            <div class="${isCurrentUser ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'} rounded-lg py-2 px-4">
+                                <p>${message.text}</p>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1 ${isCurrentUser ? 'text-right' : ''}">
+                                ${formatTime(message.timestamp)}
+                            </p>
+                        </div>
+                    </div>
+                `;
+                
+                chatMessages.appendChild(messageElement);
+            });
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
+            
+            if (currentChat === 'global') {
+                const newMessage = {
+                    id: messages.length + 1,
+                    sender: currentUser,
+                    text,
+                    timestamp: new Date()
+                };
+                messages.push(newMessage);
+                renderMessages(messages);
+            } else if (currentChat === 'private' && selectedFriend) {
+                const privateChatId = [currentUser.id, selectedFriend.id].sort().join('-');
+                let chat = privateMessages.find(c => c.id === privateChatId);
+                
+                if (!chat) {
+                    chat = {
+                        id: privateChatId,
+                        participants: [currentUser, selectedFriend],
+                        messages: []
+                    };
+                    privateMessages.push(chat);
+                }
+                
+                const newMessage = {
+                    id: chat.messages.length + 1,
+                    sender: currentUser,
+                    text,
+                    timestamp: new Date()
+                };
+                chat.messages.push(newMessage);
+                renderMessages(chat.messages);
+            }
+            
+            messageInput.value = '';
+        }
+
+        function formatTime(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Profile Functions
+        function toggleProfileDropdown() {
+            document.getElementById('profileDropdown').classList.toggle('hidden');
+        }
+
+        function showProfileSettings() {
+            document.getElementById('profileUsername').value = currentUser.username;
+            document.querySelector(`input[name="gender"][value="${currentUser.gender}"]`).checked = true;
+            document.getElementById('profileBio').value = currentUser.bio || '';
+            document.getElementById('profilePicPreview').src = currentUser.avatar;
+            
+            profileModal.classList.remove('hidden');
+            document.getElementById('profileDropdown').classList.add('hidden');
+        }
+
+        function hideProfileSettings() {
+            profileModal.classList.add('hidden');
+        }
+
+        function updateProfile() {
+            const username = document.getElementById('profileUsername').value;
+            const gender = document.querySelector('input[name="gender"]:checked').value;
+            const bio = document.getElementById('profileBio').value;
+            
+            if (!username) {
+                alert('Username cannot be empty');
+                return;
+            }
+            
+            // Update current user
+            currentUser.username = username;
+            currentUser.gender = gender;
+            currentUser.bio = bio;
+            
+            // Update in users array
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            if (userIndex !== -1) {
+                users[userIndex] = { ...currentUser };
+            }
+            
+            // Update UI
+            currentUsername.textContent = username;
+            localStorage.setItem('demoUser', JSON.stringify(currentUser));
+            
+            hideProfileSettings();
+        }
+
+        // Friend Request Functions
+        function showFriendRequests() {
+            // Clear existing requests
+            friendRequestsList.innerHTML = '';
+            
+            // Add pending requests
+            const pendingRequests = friendRequests.filter(req => req.status === 'pending');
+            
+            if (pendingRequests.length === 0) {
+                friendRequestsList.innerHTML = `
+                    <div class="text-center py-10 text-gray-500">
+                        <i class="fas fa-user-friends text-4xl mb-2"></i>
+                        <p>No pending friend requests</p>
+                    </div>
+                `;
+            } else {
+                pendingRequests.forEach(request => {
+                    const requestElement = document.createElement('div');
+                    requestElement.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-md';
+                    
+                    requestElement.innerHTML = `
+                        <div class="flex items-center">
+                            <img src="${request.from.avatar}" alt="${request.from.username}" class="h-10 w-10 rounded-full">
+                            <div class="ml-3">
+                                <p class="font-medium">${request.from.username}</p>
+                                <p class="text-xs text-gray-500">Wants to be your friend</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="px-3 py-1 bg-green-500 text-white rounded-md text-sm" onclick="acceptFriendRequest(${request.from.id})">
+                                Accept
+                            </button>
+                            <button class="px-3 py-1 bg-red-500 text-white rounded-md text-sm" onclick="declineFriendRequest(${request.from.id})">
+                                Decline
+                            </button>
+                        </div>
+                    `;
+                    
+                    friendRequestsList.appendChild(requestElement);
+                });
+            }
+            
+            friendRequestsModal.classList.remove('hidden');
+            document.getElementById('profileDropdown').classList.add('hidden');
+        }
+
+        function hideFriendRequests() {
+            friendRequestsModal.classList.add('hidden');
+        }
+
+        function acceptFriendRequest(friendId) {
+            const friend = users.find(u => u.id === friendId);
+            if (friend && !friends.some(f => f.id === friendId)) {
+                friends.push(friend);
+            }
+            
+            // Update request status
+            const requestIndex = friendRequests.findIndex(req => req.from.id === friendId);
+            if (requestIndex !== -1) {
+                friendRequests[requestIndex].status = 'accepted';
+            }
+            
+            updateFriendsList();
+            updateFriendRequestsCount();
+            hideFriendRequests();
+        }
+
+        function declineFriendRequest(friendId) {
+            // Update request status
+            const requestIndex = friendRequests.findIndex(req => req.from.id === friendId);
+            if (requestIndex !== -1) {
+                friendRequests[requestIndex].status = 'declined';
+            }
+            
+            updateFriendRequestsCount();
+            hideFriendRequests();
+        }
+
+        // Add Friend Functions
+        function showAddFriendModal() {
+            addFriendModal.classList.remove('hidden');
+            searchResults.innerHTML = `
+                <div class="text-center py-10 text-gray-500">
+                    <i class="fas fa-search text-4xl mb-2"></i>
+                    <p>Search for users to add as friends</p>
+                </div>
+            `;
+        }
+
+        function hideAddFriendModal() {
+            addFriendModal.classList.add('hidden');
+        }
+
+        function searchUser() {
+            const query = document.getElementById('friendUsername').value.trim().toLowerCase();
+            if (!query) return;
+            
+            // Filter users who are not already friends and not the current user
+            const results = users.filter(user => 
+                user.username.toLowerCase().includes(query) && 
+                user.id !== currentUser.id && 
+                !friends.some(f => f.id === user.id) &&
+                !friendRequests.some(req => req.from.id === user.id && req.status === 'pending')
+            );
+            
+            // Display results
+            searchResults.innerHTML = '';
+            
+            if (results.length === 0) {
+                searchResults.innerHTML = `
+                    <div class="text-center py-10 text-gray-500">
+                        <i class="fas fa-user-times text-4xl mb-2"></i>
+                        <p>No users found</p>
+                    </div>
+                `;
+            } else {
+                results.forEach(user => {
+                    const userElement = document.createElement('div');
+                    userElement.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-md';
+                    
+                    userElement.innerHTML = `
+                        <div class="flex items-center">
+                            <img src="${user.avatar}" alt="${user.username}" class="h-10 w-10 rounded-full">
+                            <div class="ml-3">
+                                <p class="font-medium">${user.username}</p>
+                                <p class="text-xs text-gray-500">${user.bio || 'No bio'}</p>
+                            </div>
+                        </div>
+                        <button class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm" onclick="sendFriendRequest(${user.id})">
+                            Add Friend
+                        </button>
+                    `;
+                    
+                    searchResults.appendChild(userElement);
+                });
+            }
+        }
+
+        function sendFriendRequest(userId) {
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                // In a real app, this would be sent to the server
+                // For demo, we'll just add it to our local requests
+                friendRequests.push({
+                    from: currentUser,
+                    to: user,
+                    status: 'pending'
+                });
+                
+                alert(`Friend request sent to ${user.username}`);
+                hideAddFriendModal();
+            }
+        }
+
+        // Handle profile picture upload
+        document.getElementById('profilePicUpload').addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById('profilePicPreview').src = event.target.result;
+                    currentUserAvatar.src = event.target.result;
+                    currentUser.avatar = event.target.result;
+                    localStorage.setItem('demoUser', JSON.stringify(currentUser));
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        // Handle Enter key for sending messages
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#currentUserAvatar') && !e.target.closest('#profileDropdown')) {
+                document.getElementById('profileDropdown').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
