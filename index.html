@@ -889,18 +889,19 @@
 
         // --- SETUP ---
 
-        // 1. Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSy_DUMMY_API_KEY",
-            authDomain: "callingapp-dummy.firebaseapp.com",
-            databaseURL: "https://callingapp-dummy-default-rtdb.firebaseio.com",
-            projectId: "callingapp-dummy",
-            storageBucket: "callingapp-dummy.appspot.com",
-            messagingSenderId: "1234567890",
-            appId: "1:1234567890:web:dummy"
-        };
-        firebase.initializeApp(firebaseConfig);
+const firebaseConfig = {
+  apiKey: "AIzaSyBN3t12DHV_RpJex4GGM1l21hPacQ5-UeA",
+  authDomain: "samir-call-audio-video.firebaseapp.com",
+  databaseURL: "https://samir-call-audio-video-default-rtdb.firebaseio.com",
+  projectId: "samir-call-audio-video",
+  storageBucket: "samir-call-audio-video.firebasestorage.app",
+  messagingSenderId: "687409777981",
+  appId: "1:687409777981:web:c5655946bf78ef1bf7c954"
+};
 
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+        
         const auth = firebase.auth();
         const db = firebase.database();
         const usersRef = db.ref('users');
