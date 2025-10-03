@@ -3,978 +3,1863 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Chat Hub</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>CallingApp SPA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        .chat-message {
-            animation: fadeIn 0.3s ease-in-out;
+        /* Part 2: CSS Styling */
+
+        /* Root Variables */
+        :root {
+            --wa-header-bg: #005c97; /* Deep blue */
+            --wa-accent-blue: #34B7F1; /* Vibrant blue */
+            --wa-message-out-bg: #e1f6fb; /* Light blue for sent messages */
+            --wa-message-in-bg: #ffffff;
+            --wa-app-bg: #f0f2f5; /* Light grey app background */
+            --wa-chat-bg: #e5ddd5; /* Classic chat background color */
+            --wa-icon-color: #f0f2f5;
+            --wa-text-primary: #111b21;
+            --wa-text-secondary: #667781;
+            --wa-border-color: #e9edef;
+            --wa-active-tab-indicator: var(--wa-accent-blue);
+            --wa-button-color: #008069; /* Green for familiarity */
+            --wa-link-color: #00a8e8;
+            --wa-shadow: rgba(17, 27, 33, 0.15);
+            --wa-font: 'Roboto', sans-serif;
+            --header-height: 110px;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        /* Global & General Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--wa-font);
+            color: var(--wa-text-primary);
         }
-        .online-dot {
-            width: 10px;
-            height: 10px;
-            background-color: #4ade80;
-            border-radius: 50%;
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #d1d7db; /* Outer page background */
+        }
+
+        /* WebKit Scrollbar Customization */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--wa-app-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--wa-text-secondary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Icon Button Style */
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            margin: 0 4px;
+            color: var(--wa-icon-color);
+            transition: opacity 0.2s;
+        }
+
+        .icon-btn:hover {
+            opacity: 0.8;
+        }
+
+        .icon-btn svg {
+            fill: currentColor;
+            width: 24px;
+            height: 24px;
+            vertical-align: middle;
+        }
+
+        /* Layout & View Styling */
+        #app-container {
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            max-height: 950px;
+            background-color: var(--wa-app-bg);
+            box-shadow: 0 4px 12px var(--wa-shadow);
+            border-radius: 6px;
+            position: relative; /* For absolute positioned views/modals */
+            overflow: hidden;
+        }
+
+        .view {
+            width: 100%;
+            height: 100%;
+            display: none; /* Toggled by JS */
+            flex-direction: column;
+            overflow: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: var(--wa-app-bg);
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        /* Auth View */
+        #auth-view {
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--wa-header-bg), #00a8e8);
+        }
+
+        #auth-view h1 {
+            color: var(--wa-icon-color);
+            font-weight: 700;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .auth-form {
+            background: var(--wa-message-in-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--wa-shadow);
+            width: 100%;
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .auth-form input[type="email"],
+        .auth-form input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--wa-border-color);
+            border-radius: 4px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .auth-form input:focus {
+            outline: none;
+            border-color: var(--wa-accent-blue);
+        }
+
+        .auth-form button {
+            background-color: var(--wa-button-color);
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1em;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+
+        .auth-form button:hover {
+            background-color: #006b52;
+        }
+
+        .auth-form a {
+            color: var(--wa-link-color);
+            text-align: center;
+            text-decoration: none;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            text-align: center;
+            font-size: 0.9em;
+            font-weight: 500;
+            min-height: 20px;
+        }
+
+        /* Main View Header and Navigation */
+        .main-header {
+            background-color: var(--wa-header-bg);
+            color: var(--wa-icon-color);
+            flex-shrink: 0;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 10px;
+        }
+
+        .header-top h2 {
+            font-size: 1.5em;
+            font-weight: 500;
+            color: var(--wa-icon-color);
+            margin-left: 10px;
+        }
+
+        .header-actions {
+            display: flex;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-around;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-tab {
+            flex-grow: 1;
+            text-align: center;
+            padding: 12px 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .nav-tab.active {
+            color: var(--wa-icon-color);
+            position: relative;
+        }
+
+        .nav-tab.active::after {
+            content: '';
             position: absolute;
             bottom: 0;
-            right: 0;
-            border: 2px solid white;
+            left: 20%;
+            right: 20%;
+            height: 3px;
+            background-color: var(--wa-active-tab-indicator);
+            border-top-left-radius: 2px;
+            border-top-right-radius: 2px;
         }
-        .profile-pic-upload {
-            opacity: 0;
+
+        .badge {
             position: absolute;
-            z-index: -1;
+            top: 2px;
+            right: 5px;
+            background-color: #ff3333;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.65em;
+            font-weight: 700;
+            min-width: 20px;
+            height: 20px;
+            display: none;
+            justify-content: center;
+            align-items: center;
         }
-        .profile-pic-label {
-            cursor: pointer;
-            transition: all 0.3s ease;
+
+        .badge.visible {
+            display: flex;
         }
-        .profile-pic-label:hover {
-            transform: scale(1.05);
+
+
+        /* Main Content Panels */
+        #main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            position: relative;
         }
-        .tab-content {
+
+        .content-panel {
+            padding: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: none;
         }
-        .tab-content.active {
+
+        .content-panel.active {
             display: block;
-            animation: fadeIn 0.5s ease;
+        }
+
+        /* List Item Styling */
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--wa-border-color);
+            cursor: pointer;
+            background-color: var(--wa-message-in-bg);
+            transition: background-color 0.1s;
+        }
+
+        .list-item:hover {
+            background-color: var(--wa-app-bg);
+        }
+
+        .list-item-emoji {
+            font-size: 2.2em;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .list-item-details {
+            flex-grow: 1;
+            min-width: 0; /* Ensures content inside doesn't overflow parent */
+        }
+
+        .list-item-details .name {
+            font-weight: 500;
+            font-size: 1.05em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .list-item-details .subtext {
+            color: var(--wa-text-secondary);
+            font-size: 0.9em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .list-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .list-item-actions button {
+            font-size: 0.9em;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .list-item-actions .accept-btn {
+            background-color: var(--wa-button-color);
+            color: white;
+        }
+
+        .list-item-actions .reject-btn {
+            background-color: #f44336;
+            color: white;
+        }
+
+
+        /* Chat View */
+        #chat-view {
+            background-color: var(--wa-chat-bg);
+        }
+
+        .chat-header {
+            background-color: var(--wa-header-bg);
+            flex-shrink: 0;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-header-info {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .chat-header-info .emoji {
+            font-size: 1.8em;
+            margin-right: 10px;
+        }
+
+        .chat-header-info .name {
+            font-size: 1.1em;
+            font-weight: 500;
+            color: var(--wa-icon-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-header .icon-btn {
+            color: var(--wa-icon-color);
+        }
+
+        #chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px 15px;
+            /* Subtle repeating background pattern */
+            background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23bdbdbd' fill-opacity='0.15' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 7px;
+            line-height: 1.4;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message-received {
+            background-color: var(--wa-message-in-bg);
+            float: left;
+            clear: both;
+            border-bottom-left-radius: 0;
+        }
+
+        .message-sent {
+            background-color: var(--wa-message-out-bg);
+            float: right;
+            clear: both;
+            border-bottom-right-radius: 0;
+        }
+
+        .message-time {
+            display: block;
+            text-align: right;
+            font-size: 0.7em;
+            color: var(--wa-text-secondary);
+            margin-top: 5px;
+        }
+
+        #chat-input-container {
+            flex-shrink: 0;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            background-color: var(--wa-app-bg);
+            border-top: 1px solid var(--wa-border-color);
+        }
+
+        #chat-input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: none;
+            background-color: var(--wa-message-in-bg);
+            font-size: 1em;
+            margin-right: 8px;
+        }
+
+        #chat-input:focus {
+            outline: none;
+        }
+
+        #chat-send-btn {
+            background-color: var(--wa-button-color);
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            transition: background-color 0.3s;
+        }
+
+        #chat-send-btn:hover {
+            background-color: #006b52;
+        }
+
+        #chat-send-btn svg {
+            fill: white;
+            width: 20px;
+            height: 20px;
+            margin-left: 2px;
+        }
+
+
+        /* Call Views */
+        .call-view {
+            display: none; /* Toggled by JS */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 50;
+        }
+
+        .call-view.active {
+            display: block;
+        }
+
+        #remote-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background-color: black;
+        }
+
+        #local-video {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 100px;
+            height: 150px;
+            border: 2px solid white;
+            border-radius: 8px;
+            z-index: 60;
+            object-fit: cover;
+            cursor: grab; /* Indicates draggable */
+        }
+
+        #remote-audio {
+            display: none; /* Audio element is not visible */
+        }
+
+        .call-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30%; /* Overlay covers bottom part */
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0));
+            z-index: 55;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 30px;
+        }
+
+        .caller-info {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .caller-info .emoji {
+            font-size: 3em;
+            margin-bottom: 5px;
+        }
+
+        .caller-info .name {
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .call-controls button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .call-controls button:hover {
+            transform: scale(1.05);
+        }
+
+        #end-call-btn, #end-voice-btn {
+            background-color: #e91e63; /* Red for end call */
+        }
+
+        /* Modals */
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 100;
+            display: none; /* Toggled by JS */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .modal-content h2 {
+            font-size: 1.5em;
+            color: var(--wa-header-bg);
+            margin-bottom: 10px;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .modal-form input[type="text"],
+        .modal-form input[type="number"],
+        .modal-form select {
+            padding: 10px;
+            border: 1px solid var(--wa-border-color);
+            border-radius: 4px;
+        }
+
+        .modal-form button {
+            padding: 10px;
+            background-color: var(--wa-button-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        /* Incoming Call Modal Specific */
+        #incoming-call-modal .call-controls {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        #incoming-call-modal .call-controls button {
+            width: 70px;
+            height: 70px;
+        }
+
+        #incoming-call-accept-btn {
+            background-color: #4CAF50; /* Green for accept */
+        }
+
+        #incoming-call-reject-btn {
+            background-color: #e91e63; /* Red for reject */
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans">
-    <!-- Auth Modal -->
-    <div id="authModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-gray-800" id="authTitle">Login</h2>
-                <button onclick="toggleAuthModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div id="loginForm">
-                <div class="mb-4">
-                    <label class="block text-gray-700 mb-2" for="loginUsername">Username</label>
-                    <input type="text" id="loginUsername" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div class="mb-6">
-                    <label class="block text-gray-700 mb-2" for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <button onclick="login()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 mb-2">
-                    Login
-                </button>
-                <p class="text-center text-gray-600">
-                    Don't have an account? 
-                    <a href="#" onclick="showRegisterForm()" class="text-blue-600 hover:underline">Register</a>
-                </p>
-            </div>
-            
-            <div id="registerForm" class="hidden">
-                <div class="mb-4">
-                    <label class="block text-gray-700 mb-2" for="registerUsername">Username</label>
-                    <input type="text" id="registerUsername" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 mb-2" for="registerPassword">Password</label>
-                    <input type="password" id="registerPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 mb-2" for="confirmPassword">Confirm Password</label>
-                    <input type="password" id="confirmPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <button onclick="register()" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-300 mb-2">
-                    Register
-                </button>
-                <p class="text-center text-gray-600">
-                    Already have an account? 
-                    <a href="#" onclick="showLoginForm()" class="text-blue-600 hover:underline">Login</a>
-                </p>
-            </div>
+<body>
+
+    <div id="app-container">
+
+        <div id="auth-view" class="view active">
+            <h1>CallingApp</h1>
+
+            <form id="login-form" class="auth-form">
+                <h2>Sign In</h2>
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <div id="login-error" class="error-message"></div>
+                <button type="submit">Log In</button>
+                <a id="switch-to-signup">Need an account? Sign Up</a>
+            </form>
+
+            <form id="signup-form" class="auth-form" style="display: none;">
+                <h2>Sign Up</h2>
+                <input type="email" id="signup-email" placeholder="Email" required>
+                <input type="password" id="signup-password" placeholder="Password" required>
+                <div id="signup-error" class="error-message"></div>
+                <button type="submit">Register</button>
+                <a id="switch-to-login">Already have an account? Log In</a>
+            </form>
         </div>
-    </div>
 
-    <!-- Main App Container -->
-    <div id="appContainer" class="max-w-6xl mx-auto p-4 hidden">
-        <!-- Header -->
-        <header class="bg-white shadow-md rounded-lg p-4 mb-6 flex justify-between items-center">
-            <div class="flex items-center">
-                <img src="https://cdn-icons-png.flaticon.com/512/2452/2452499.png" alt="Chat Logo" class="h-10 w-10 mr-3">
-                <h1 class="text-2xl font-bold text-gray-800">Global Chat Hub</h1>
-            </div>
-            <div class="flex items-center space-x-4">
-                <div class="relative">
-                    <img id="currentUserAvatar" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profile" class="h-10 w-10 rounded-full cursor-pointer" onclick="toggleProfileDropdown()">
-                    <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
-                        <div class="py-1">
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="showProfileSettings()">
-                                <i class="fas fa-user-cog mr-2"></i> Profile Settings
-                            </a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="showFriendRequests()">
-                                <i class="fas fa-user-friends mr-2"></i> Friend Requests
-                            </a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="logout()">
-                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <span id="currentUsername" class="font-medium text-gray-700">Guest</span>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <div class="flex flex-col md:flex-row gap-6">
-            <!-- Sidebar -->
-            <div class="w-full md:w-1/4 bg-white rounded-lg shadow-md p-4">
-                <div class="mb-6">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Friends</h2>
-                    <div class="relative">
-                        <input type="text" placeholder="Search friends..." class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
-                    </div>
-                </div>
-                
-                <div class="mb-6">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-medium text-gray-700">Online Friends</h3>
-                        <span id="onlineCount" class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">0</span>
-                    </div>
-                    <div id="onlineFriendsList" class="space-y-2">
-                        <!-- Online friends will be added here dynamically -->
-                    </div>
-                </div>
-                
-                <div>
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-medium text-gray-700">All Friends</h3>
-                        <span id="friendsCount" class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">0</span>
-                    </div>
-                    <div id="friendsList" class="space-y-2">
-                        <!-- All friends will be added here dynamically -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chat Area -->
-            <div class="w-full md:w-3/4 bg-white rounded-lg shadow-md overflow-hidden">
-                <!-- Chat Header -->
-                <div class="bg-gray-800 text-white p-4 flex items-center">
-                    <div id="chatHeaderInfo" class="flex items-center">
-                        <i class="fas fa-globe text-xl mr-3"></i>
-                        <h2 class="text-xl font-semibold">Global Chat</h2>
-                    </div>
-                    <div class="ml-auto flex space-x-2">
-                        <button id="globalChatBtn" class="px-3 py-1 bg-blue-600 rounded-md text-sm font-medium active-tab">
-                            <i class="fas fa-globe mr-1"></i> Global
+        <div id="main-view" class="view" style="display: none;">
+            <header class="main-header">
+                <div class="header-top">
+                    <h2>CallingApp</h2>
+                    <div class="header-actions">
+                        <button id="add-friend-btn" class="icon-btn">
+                            <svg viewBox="0 0 24 24"><path d="M15,14C12.33,14 7,15.33 7,18V20H23V18C23,15.33 17.67,14 15,14M6,10V7H4V10H1V12H4V15H6V12H9V10M15,12A4,4 0 0,0 19,8A4,4 0 0,0 15,4A4,4 0 0,0 11,8A4,4 0 0,0 15,12Z" /></svg>
                         </button>
-                        <button id="privateChatBtn" class="px-3 py-1 bg-gray-600 rounded-md text-sm font-medium">
-                            <i class="fas fa-user-friends mr-1"></i> Private
+                        <button id="menu-btn" class="icon-btn">
+                            <svg viewBox="0 0 24 24"><path d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z" /></svg>
                         </button>
                     </div>
                 </div>
-                
-                <!-- Chat Content -->
-                <div class="h-96 overflow-y-auto p-4 bg-gray-50" id="chatMessages">
-                    <!-- Messages will be added here dynamically -->
-                    <div class="text-center text-gray-500 py-10">
-                        <i class="fas fa-comments text-4xl mb-2"></i>
-                        <p>Start chatting with people around the world!</p>
+                <nav class="header-nav">
+                    <div id="nav-home" class="nav-tab active">
+                        Chats
+                        <span class="badge" id="chat-badge"></span>
                     </div>
-                </div>
-                
-                <!-- Message Input -->
-                <div class="p-4 border-t border-gray-200 bg-white">
-                    <div class="flex items-center">
-                        <input type="text" id="messageInput" placeholder="Type your message..." class="flex-1 px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button onclick="sendMessage()" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition duration-300">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
+                    <div id="nav-notifications" class="nav-tab">
+                        Updates
+                        <span class="badge" id="updates-badge"></span>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                    <div id="nav-calls" class="nav-tab">
+                        Calls
+                        <span class="badge" id="calls-badge"></span>
+                    </div>
+                </nav>
+            </header>
 
-    <!-- Profile Settings Modal -->
-    <div id="profileModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-gray-800">Profile Settings</h2>
-                <button onclick="hideProfileSettings()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="flex flex-col items-center mb-6">
-                <div class="relative mb-4">
-                    <input type="file" id="profilePicUpload" accept="image/*" class="profile-pic-upload">
-                    <label for="profilePicUpload" class="profile-pic-label">
-                        <img id="profilePicPreview" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profile" class="h-24 w-24 rounded-full object-cover border-4 border-blue-200">
-                    </label>
-                    <div class="text-center mt-2">
-                        <span class="text-blue-600 text-sm cursor-pointer" onclick="document.getElementById('profilePicUpload').click()">Change Photo</span>
-                    </div>
+            <main id="main-content">
+                <div id="home-content" class="content-panel active">
+                    <ul id="contact-list">
+                        </ul>
                 </div>
-                
-                <div class="w-full mb-4">
-                    <label class="block text-gray-700 mb-2" for="profileUsername">Username</label>
-                    <input type="text" id="profileUsername" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+                <div id="notifications-content" class="content-panel">
+                    <ul id="request-list">
+                        </ul>
                 </div>
-                
-                <div class="w-full mb-4">
-                    <label class="block text-gray-700 mb-2">Gender</label>
-                    <div class="flex space-x-4">
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="gender" value="male" class="form-radio text-blue-600">
-                            <span class="ml-2">Male</span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="gender" value="female" class="form-radio text-pink-600">
-                            <span class="ml-2">Female</span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="gender" value="other" class="form-radio text-purple-600">
-                            <span class="ml-2">Other</span>
-                        </label>
-                    </div>
+
+                <div id="calls-content" class="content-panel">
+                    <ul id="call-log-list">
+                        </ul>
                 </div>
-                
-                <div class="w-full mb-4">
-                    <label class="block text-gray-700 mb-2" for="profileBio">Bio</label>
-                    <textarea id="profileBio" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </main>
+        </div>
+
+        <div id="chat-view" class="view" style="display: none;">
+            <header class="chat-header">
+                <div class="chat-header-info">
+                    <button id="chat-back-btn" class="icon-btn">
+                        <svg viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+                    </button>
+                    <span id="chat-partner-emoji" class="emoji">👤</span>
+                    <span id="chat-partner-name" class="name">Contact Name</span>
                 </div>
-                
-                <button onclick="updateProfile()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300">
-                    Save Changes
+                <div class="chat-header-actions">
+                    <button id="voice-call-btn" class="icon-btn" title="Voice Call">
+                        <svg viewBox="0 0 24 24"><path d="M20,15.5C18.8,15.5 17.58,15.34 16.37,14.97C15.97,14.85 15.44,14.95 15.12,15.27L13.12,17.27C10.5,16.17 8.17,13.43 7.12,10.74L9.12,8.73C9.44,8.41 9.54,7.87 9.42,7.47C9.05,6.26 8.89,5 8.89,3.8C8.89,3.31 8.48,3 8,3H4C3.47,3 3,3.47 3,4C3,13.63 10.37,21 20,21C20.53,21 21,20.53 21,20V16.11C21,15.62 20.69,15.5 20,15.5Z" /></svg>
+                    </button>
+                    <button id="video-call-btn" class="icon-btn" title="Video Call">
+                        <svg viewBox="0 0 24 24"><path d="M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z" /></svg>
+                    </button>
+                    <button id="chat-more-btn" class="icon-btn" title="More options">
+                        <svg viewBox="0 0 24 24"><path d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z" /></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div id="chat-messages">
+                </div>
+
+            <div id="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Message">
+                <button id="chat-send-btn">
+                    <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z" /></svg>
                 </button>
             </div>
         </div>
-    </div>
 
-    <!-- Friend Requests Modal -->
-    <div id="friendRequestsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-gray-800">Friend Requests</h2>
-                <button onclick="hideFriendRequests()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div id="friendRequestsList" class="space-y-3">
-                <!-- Friend requests will be added here dynamically -->
-                <div class="text-center py-10 text-gray-500">
-                    <i class="fas fa-user-friends text-4xl mb-2"></i>
-                    <p>No pending friend requests</p>
+        <div id="video-call-view" class="call-view" style="display: none;">
+            <video id="remote-video" autoplay></video>
+            <video id="local-video" autoplay muted></video>
+            <div class="call-overlay">
+                <div class="caller-info">
+                    <span id="video-caller-emoji" class="emoji">👤</span>
+                    <span id="video-caller-name" class="name">Calling...</span>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Friend Modal -->
-    <div id="addFriendModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-gray-800">Add Friend</h2>
-                <button onclick="hideAddFriendModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-gray-700 mb-2" for="friendUsername">Username</label>
-                <div class="flex">
-                    <input type="text" id="friendUsername" placeholder="Enter username" class="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <button onclick="searchUser()" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition duration-300">
-                        <i class="fas fa-search"></i>
+                <div class="call-controls">
+                    <button id="end-call-btn" title="End Call">
+                        <svg viewBox="0 0 24 24"><path d="M20,15.5C18.8,15.5 17.58,15.34 16.37,14.97C15.97,14.85 15.44,14.95 15.12,15.27L13.12,17.27C10.5,16.17 8.17,13.43 7.12,10.74L9.12,8.73C9.44,8.41 9.54,7.87 9.42,7.47C9.05,6.26 8.89,5 8.89,3.8C8.89,3.31 8.48,3 8,3H4C3.47,3 3,3.47 3,4C3,13.63 10.37,21 20,21C20.53,21 21,20.53 21,20V16.11C21,15.62 20.69,15.5 20,15.5Z" /></svg>
                     </button>
                 </div>
             </div>
-            
-            <div id="searchResults" class="space-y-3">
-                <!-- Search results will be added here dynamically -->
+        </div>
+
+        <div id="voice-call-view" class="call-view" style="display: none;">
+            <audio id="remote-audio" autoplay></audio>
+            <div class="call-overlay">
+                <div class="caller-info">
+                    <span id="voice-caller-emoji" class="emoji">👤</span>
+                    <span id="voice-caller-name" class="name">Calling...</span>
+                </div>
+                <div class="call-controls">
+                    <button id="end-voice-btn" title="End Call">
+                        <svg viewBox="0 0 24 24"><path d="M20,15.5C18.8,15.5 17.58,15.34 16.37,14.97C15.97,14.85 15.44,14.95 15.12,15.27L13.12,17.27C10.5,16.17 8.17,13.43 7.12,10.74L9.12,8.73C9.44,8.41 9.54,7.87 9.42,7.47C9.05,6.26 8.89,5 8.89,3.8C8.89,3.31 8.48,3 8,3H4C3.47,3 3,3.47 3,4C3,13.63 10.37,21 20,21C20.53,21 21,20.53 21,20V16.11C21,15.62 20.69,15.5 20,15.5Z" /></svg>
+                    </button>
+                </div>
             </div>
         </div>
+
+
+        <div id="profile-setup-modal" class="modal">
+            <div class="modal-content">
+                <h2>Complete Your Profile</h2>
+                <form id="profile-setup-form" class="modal-form">
+                    <label for="setup-name">Display Name:</label>
+                    <input type="text" id="setup-name" required placeholder="Your Name">
+                    <label for="setup-emoji">Select an Emoji:</label>
+                    <select id="setup-emoji" required>
+                        <option value="😃">😃</option>
+                        <option value="😎">😎</option>
+                        <option value="🤖">🤖</option>
+                        <option value="🐶">🐶</option>
+                        <option value="🐱">🐱</option>
+                    </select>
+                    <button type="submit">Save Profile</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="add-friend-modal" class="modal">
+            <div class="modal-content">
+                <h2>Add Friend</h2>
+                <form id="add-friend-form" class="modal-form">
+                    <label for="friend-id">Friend's Unique ID:</label>
+                    <input type="text" id="friend-id" required placeholder="Paste friend's ID here">
+                    <button type="submit">Send Request</button>
+                    <div id="add-friend-message" class="error-message"></div>
+                </form>
+            </div>
+        </div>
+
+        <div id="profile-view-modal" class="modal">
+            <div class="modal-content">
+                <h2>Your Profile</h2>
+                <div id="user-info">
+                    <p>ID: <span id="user-display-id"></span></p>
+                    <p>Name: <span id="user-display-name"></span></p>
+                    <p>Emoji: <span id="user-display-emoji"></span></p>
+                </div>
+                <form id="profile-edit-form" class="modal-form" style="display: none;">
+                    <label for="edit-name">Edit Name:</label>
+                    <input type="text" id="edit-name" required>
+                    <label for="edit-emoji">Edit Emoji:</label>
+                    <select id="edit-emoji">
+                        </select>
+                    <button type="submit">Update Profile</button>
+                </form>
+                <button id="show-edit-btn">Edit Profile</button>
+                <h3>Blocked Users</h3>
+                <ul id="blocked-users-list">
+                    </ul>
+                <button id="logout-btn" style="background-color: #f44336;">Log Out</button>
+            </div>
+        </div>
+
+        <div id="incoming-call-modal" class="modal">
+            <div class="modal-content">
+                <h2>Incoming Call</h2>
+                <div class="caller-info">
+                    <span id="incoming-caller-emoji" class="emoji">👤</span>
+                    <span id="incoming-caller-name" class="name">... is calling.</span>
+                    <p id="incoming-call-type" style="color: var(--wa-text-secondary);"></p>
+                </div>
+                <div class="call-controls">
+                    <button id="incoming-call-accept-btn" title="Accept Call">
+                        <svg viewBox="0 0 24 24"><path d="M12,9C9.79,9 8,10.79 8,13C8,15.21 9.79,17 12,17C14.21,17 16,15.21 16,13C16,10.79 14.21,9 12,9M20,2A2,2 0 0,1 22,4V20A2,2 0 0,1 20,22H4A2,2 0 0,1 2,20V4A2,2 0 0,1 4,2H20M20,4H4V20H20V4Z" /></svg>
+                    </button>
+                    <button id="incoming-call-reject-btn" title="Reject Call">
+                        <svg viewBox="0 0 24 24"><path d="M20,15.5C18.8,15.5 17.58,15.34 16.37,14.97C15.97,14.85 15.44,14.95 15.12,15.27L13.12,17.27C10.5,16.17 8.17,13.43 7.12,10.74L9.12,8.73C9.44,8.41 9.54,7.87 9.42,7.47C9.05,6.26 8.89,5 8.89,3.8C8.89,3.31 8.48,3 8,3H4C3.47,3 3,3.47 3,4C3,13.63 10.37,21 20,21C20.53,21 21,20.53 21,20V16.11C21,15.62 20.69,15.5 20,15.5Z" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <audio id="ringtone" loop>
+            <source src="data:audio/wav;base64,UklGRtUAAABXQVZFZm10IBAAAAABAAEARKwAAABAAgAACTAACABkYXRhxAAACDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PPDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDCwsLFkI3D6A" type="audio/wav">
+        </audio>
     </div>
+    
+    <script src="https://www.gstatic.com/firebase/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebase/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebase/8.10.1/firebase-database.js"></script>
 
     <script>
-        // User data structure with all required fields
-        let users = [
-            { 
-                id: 1, 
-                username: 'john_doe', 
-                password: 'password123', 
-                avatar: 'https://randomuser.me/api/portraits/men/1.jpg', 
-                gender: 'male', 
-                bio: 'Hello world!', 
-                online: true,
-                friends: [2], 
-                friendRequests: [] 
-            },
-            { 
-                id: 2, 
-                username: 'jane_smith', 
-                password: 'password123', 
-                avatar: 'https://randomuser.me/api/portraits/women/1.jpg', 
-                gender: 'female', 
-                bio: 'Nice to meet you!', 
-                online: true,
-                friends: [1], 
-                friendRequests: [] 
-            },
-            { 
-                id: 3, 
-                username: 'bob_johnson', 
-                password: 'password123', 
-                avatar: 'https://randomuser.me/api/portraits/men/2.jpg', 
-                gender: 'male', 
-                bio: 'Chatting is fun!', 
-                online: false,
-                friends: [], 
-                friendRequests: [] 
+        // Part 3: JavaScript Logic
+
+        // --- SETUP ---
+
+        // 1. Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSy_DUMMY_API_KEY",
+            authDomain: "callingapp-dummy.firebaseapp.com",
+            databaseURL: "https://callingapp-dummy-default-rtdb.firebaseio.com",
+            projectId: "callingapp-dummy",
+            storageBucket: "callingapp-dummy.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:dummy"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        const auth = firebase.auth();
+        const db = firebase.database();
+        const usersRef = db.ref('users');
+        const callsRef = db.ref('calls');
+        const messagesRef = db.ref('messages');
+        const iceCandidatesRef = db.ref('iceCandidates');
+        const requestsRef = db.ref('requests');
+        const unreadCountsRef = db.ref('unreadCounts');
+        const callLogsRef = db.ref('callLogs');
+
+        // 2. Global State
+        let currentUser = null; // Firebase User object
+        let currentProfile = null; // App user data from /users/{uid}
+        let currentChatPartner = null; // The UID of the user currently being chatted with
+        let localStream = null; // Local media stream (for call)
+        let peerConnection = null; // RTCPeerConnection object
+        let currentCallId = null; // Key for the active call in /calls
+        let isVideoCall = false; // Flag for call type
+
+        const ringtone = document.getElementById('ringtone');
+        const appContainer = document.getElementById('app-container');
+
+        // 3. Utility Functions
+
+        /** Hides all views and shows the target view. */
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(view => {
+                view.style.display = 'none';
+                view.classList.remove('active');
+            });
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.style.display = 'flex';
+                targetView.classList.add('active');
+                if (viewId === 'main-view') {
+                    // Also ensure the active tab's content panel is shown
+                    const activeTab = document.querySelector('.nav-tab.active');
+                    if (activeTab) {
+                        const panelId = activeTab.id.replace('nav-', '') + '-content';
+                        showPanel(panelId);
+                    }
+                }
             }
-        ];
+        }
 
-        let currentUser = null;
-        let friends = [];
-        let friendRequests = [];
-        let messages = [];
-        let privateMessages = [];
-        let currentChat = 'global';
-        let selectedFriend = null;
+        /** Hides all modals and shows the target modal. */
+        function showModal(modalId, show = true) {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.classList.remove('active');
+                modal.style.display = 'none';
+            });
 
-        // DOM Elements
-        const authModal = document.getElementById('authModal');
-        const appContainer = document.getElementById('appContainer');
-        const profileModal = document.getElementById('profileModal');
-        const friendRequestsModal = document.getElementById('friendRequestsModal');
-        const addFriendModal = document.getElementById('addFriendModal');
-        const chatMessages = document.getElementById('chatMessages');
-        const messageInput = document.getElementById('messageInput');
-        const currentUsername = document.getElementById('currentUsername');
-        const currentUserAvatar = document.getElementById('currentUserAvatar');
-        const onlineFriendsList = document.getElementById('onlineFriendsList');
-        const friendsList = document.getElementById('friendsList');
-        const friendRequestsList = document.getElementById('friendRequestsList');
-        const searchResults = document.getElementById('searchResults');
-        const onlineCount = document.getElementById('onlineCount');
-        const friendsCount = document.getElementById('friendsCount');
-        const globalChatBtn = document.getElementById('globalChatBtn');
-        const privateChatBtn = document.getElementById('privateChatBtn');
-        const chatHeaderInfo = document.getElementById('chatHeaderInfo');
-
-        // Initialize the app
-        document.addEventListener('DOMContentLoaded', function() {
-            // Show auth modal by default
-            toggleAuthModal();
-            
-            // Check if user is already logged in (for demo purposes)
-            const demoUser = localStorage.getItem('demoUser');
-            if (demoUser) {
-                currentUser = JSON.parse(demoUser);
-                initializeApp();
+            const targetModal = document.getElementById(modalId);
+            if (targetModal && show) {
+                targetModal.style.display = 'flex';
+                targetModal.classList.add('active');
             }
+        }
 
-            // Set up event listeners
-            globalChatBtn.addEventListener('click', () => switchChat('global'));
-            privateChatBtn.addEventListener('click', () => switchChat('private'));
+        /** Toggles content panels in main view. */
+        function showPanel(panelId) {
+            document.querySelectorAll('.content-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            document.getElementById(panelId).classList.add('active');
+            document.getElementById('nav-' + panelId.replace('-content', '')).classList.add('active');
+            // Scroll to top when switching panels
+            document.getElementById('main-content').scrollTop = 0;
+        }
+
+        /** Clears any error message div. */
+        function clearError(id) {
+            document.getElementById(id).textContent = '';
+        }
+
+        /** Generates a random 6-digit ID */
+        function generateUniqueId() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        // --- CORE FUNCTIONALITY ---
+
+        // --- 1. Authentication ---
+
+        // Firebase Auth State Listener
+        auth.onAuthStateChanged(user => {
+            currentUser = user;
+            if (user) {
+                // User is signed in, start listening for profile data
+                usersRef.child(user.uid).on('value', snapshot => {
+                    const profile = snapshot.val();
+                    currentProfile = profile;
+
+                    if (!profile || !profile.name || !profile.emoji) {
+                        // User exists but has no profile data (first-time sign up)
+                        showView('auth-view'); // Stay on auth view until profile is done
+                        showModal('profile-setup-modal');
+                    } else {
+                        // User has a complete profile, initialize app
+                        initializeApplication();
+                        showView('main-view');
+                        showModal('profile-setup-modal', false); // Hide setup modal if it was open
+                        // Start listeners
+                        listenToContacts(profile.contacts || {});
+                        listenToRequests();
+                        listenToUnreadCounts();
+                        listenToIncomingCalls();
+                        listenToCallLogs();
+                    }
+                });
+            } else {
+                // User is signed out
+                currentProfile = null;
+                // Clear all listeners and show auth view
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+                if (peerConnection) {
+                    peerConnection.close();
+                }
+                // (In a real app, clear all DB listeners here)
+                showView('auth-view');
+            }
         });
 
-        // Auth Modal Functions
-        function toggleAuthModal() {
-            authModal.classList.toggle('hidden');
-        }
+        // Event Listeners for Auth Forms
+        document.getElementById('switch-to-signup').addEventListener('click', () => {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('signup-form').style.display = 'flex';
+            clearError('login-error');
+        });
 
-        function showLoginForm() {
-            document.getElementById('loginForm').classList.remove('hidden');
-            document.getElementById('registerForm').classList.add('hidden');
-            document.getElementById('authTitle').textContent = 'Login';
-        }
+        document.getElementById('switch-to-login').addEventListener('click', () => {
+            document.getElementById('signup-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'flex';
+            clearError('signup-error');
+        });
 
-        function showRegisterForm() {
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('registerForm').classList.remove('hidden');
-            document.getElementById('authTitle').textContent = 'Register';
-        }
+        // Login Handler
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                clearError('login-error');
+            } catch (error) {
+                document.getElementById('login-error').textContent = error.message;
+            }
+        });
 
-        function login() {
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            if (!username || !password) {
-                alert('Please enter both username and password');
-                return;
+        // Signup Handler
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            try {
+                await auth.createUserWithEmailAndPassword(email, password);
+                clearError('signup-error');
+                // The onAuthStateChanged listener will handle showing the profile setup modal
+            } catch (error) {
+                document.getElementById('signup-error').textContent = error.message;
             }
-            
-            const user = users.find(u => u.username === username && u.password === password);
-            
-            if (user) {
-                currentUser = { ...user };
-                localStorage.setItem('demoUser', JSON.stringify(currentUser));
-                toggleAuthModal();
-                initializeApp();
-            } else {
-                alert('Invalid username or password');
-            }
-        }
+        });
 
-        function register() {
-            const username = document.getElementById('registerUsername').value;
-            const password = document.getElementById('registerPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            
-            if (!username || !password || !confirmPassword) {
-                alert('Please fill in all fields');
-                return;
+        // Logout Handler (in Profile Modal)
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await auth.signOut();
+            showModal('profile-view-modal', false);
+        });
+
+
+        // --- 2. Profile Management ---
+
+        // Profile Setup Handler
+        document.getElementById('profile-setup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('setup-name').value;
+            const emoji = document.getElementById('setup-emoji').value;
+            const uid = currentUser.uid;
+            let uniqueId = generateUniqueId();
+
+            // Simple check for ID uniqueness (A better system would use a transaction)
+            let idCheck = await usersRef.orderByChild('uniqueId').equalTo(uniqueId).once('value');
+            while (idCheck.exists()) {
+                uniqueId = generateUniqueId();
+                idCheck = await usersRef.orderByChild('uniqueId').equalTo(uniqueId).once('value');
             }
-            
-            if (password !== confirmPassword) {
-                alert('Passwords do not match');
-                return;
-            }
-            
-            if (users.some(u => u.username === username)) {
-                alert('Username already exists');
-                return;
-            }
-            
-            const newUser = {
-                id: users.length + 1,
-                username,
-                password,
-                avatar: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-                gender: 'other',
-                bio: '',
-                online: true
+
+            const profileData = {
+                uid: uid,
+                uniqueId: uniqueId, // The 6-digit ID for adding friends
+                name: name,
+                emoji: emoji,
+                contacts: {},
+                blocked: {},
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             };
-            
-            users.push(newUser);
-            currentUser = { ...newUser };
-            localStorage.setItem('demoUser', JSON.stringify(currentUser));
-            toggleAuthModal();
-            initializeApp();
-        }
 
-        function logout() {
-            currentUser = null;
-            localStorage.removeItem('demoUser');
-            appContainer.classList.add('hidden');
-            toggleAuthModal();
-            resetForms();
-        }
+            await usersRef.child(uid).set(profileData);
+            // onAuthStateChanged will pick up the profile update and show main-view
+        });
 
-        function resetForms() {
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-            document.getElementById('registerUsername').value = '';
-            document.getElementById('registerPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
-            showLoginForm();
-        }
+        // Profile View/Edit Modal Handlers
+        document.getElementById('menu-btn').addEventListener('click', () => {
+            if (!currentProfile) return;
 
-        // Main App Functions
-        function initializeApp() {
-            appContainer.classList.remove('hidden');
-            currentUsername.textContent = currentUser.username;
-            currentUserAvatar.src = currentUser.avatar;
-            
-            // For demo, add some friends and friend requests
-            if (currentUser.username === 'john_doe') {
-                friends = [users[1], users[2]];
-                friendRequests = [{ from: users[3], status: 'pending' }];
-            } else if (currentUser.username === 'jane_smith') {
-                friends = [users[0]];
-                friendRequests = [];
-            } else {
-                friends = [];
-                friendRequests = [];
+            // Display current info
+            document.getElementById('user-display-id').textContent = currentProfile.uniqueId;
+            document.getElementById('user-display-name').textContent = currentProfile.name;
+            document.getElementById('user-display-emoji').textContent = currentProfile.emoji;
+
+            // Fill edit form
+            document.getElementById('edit-name').value = currentProfile.name;
+            const emojiSelect = document.getElementById('edit-emoji');
+            // Clear and repopulate emoji options
+            emojiSelect.innerHTML = '';
+            ['😃', '😎', '🤖', '🐶', '🐱', currentProfile.emoji].filter((v, i, a) => a.indexOf(v) === i).forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e;
+                opt.textContent = e;
+                if (e === currentProfile.emoji) opt.selected = true;
+                emojiSelect.appendChild(opt);
+            });
+
+            // Display blocked users
+            const blockedList = document.getElementById('blocked-users-list');
+            blockedList.innerHTML = '';
+            for (const uid in currentProfile.blocked) {
+                const li = document.createElement('li');
+                li.className = 'list-item';
+                li.innerHTML = `
+                    <span class="list-item-details">
+                        <span class="name">${currentProfile.blocked[uid].name}</span>
+                        <span class="subtext">ID: ${currentProfile.blocked[uid].uniqueId}</span>
+                    </span>
+                    <div class="list-item-actions">
+                        <button class="reject-btn unblock-btn" data-uid="${uid}">Unblock</button>
+                    </div>
+                `;
+                blockedList.appendChild(li);
             }
-            
-            updateFriendsList();
-            updateFriendRequestsCount();
-            loadGlobalMessages();
+
+            document.querySelectorAll('.unblock-btn').forEach(btn => {
+                btn.addEventListener('click', unblockUser);
+            });
+
+            showModal('profile-view-modal');
+        });
+
+        document.getElementById('show-edit-btn').addEventListener('click', () => {
+            const isEditing = document.getElementById('profile-edit-form').style.display !== 'none';
+            document.getElementById('profile-edit-form').style.display = isEditing ? 'none' : 'flex';
+            document.getElementById('user-info').style.display = isEditing ? 'block' : 'none';
+            document.getElementById('show-edit-btn').textContent = isEditing ? 'Edit Profile' : 'Cancel Edit';
+        });
+
+        document.getElementById('profile-edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newName = document.getElementById('edit-name').value;
+            const newEmoji = document.getElementById('edit-emoji').value;
+            if (newName && newEmoji) {
+                await usersRef.child(currentUser.uid).update({
+                    name: newName,
+                    emoji: newEmoji
+                });
+                // The auth listener updates currentProfile, so we can just hide the modal
+                showModal('profile-view-modal', false);
+            }
+        });
+
+        /** Function to block a user (called from a specific chat menu/context) */
+        async function blockUser(targetUid, partnerName, partnerUniqueId) {
+            if (!currentUser || !currentProfile) return;
+            await usersRef.child(currentUser.uid).child('blocked').child(targetUid).set({
+                name: partnerName,
+                uniqueId: partnerUniqueId
+            });
+            // Also remove from contacts
+            await usersRef.child(currentUser.uid).child('contacts').child(targetUid).remove();
+            alert(`${partnerName} has been blocked and removed from contacts.`);
+            showView('main-view');
         }
 
-        function updateFriendsList() {
-            // Clear existing lists
-            onlineFriendsList.innerHTML = '';
-            friendsList.innerHTML = '';
-            
-            // Count online friends
-            let onlineCountValue = 0;
-            
-            // Add online friends
-            friends.forEach(friend => {
-                if (friend.online) {
-                    onlineCountValue++;
-                    const friendElement = createFriendElement(friend, true);
-                    onlineFriendsList.appendChild(friendElement);
+        /** Function to unblock a user */
+        async function unblockUser(e) {
+            const targetUid = e.target.getAttribute('data-uid');
+            if (!currentUser) return;
+            await usersRef.child(currentUser.uid).child('blocked').child(targetUid).remove();
+            alert('User unblocked.');
+            // Re-render the blocked list
+            document.getElementById('menu-btn').click();
+        }
+
+        // --- 3. Friend & Contact System & Messaging ---
+
+        // Initialize App UI and Event Listeners for Main View Tabs
+        function initializeApplication() {
+            // Tab navigation listeners
+            document.getElementById('nav-home').addEventListener('click', () => showPanel('home-content'));
+            document.getElementById('nav-notifications').addEventListener('click', () => showPanel('notifications-content'));
+            document.getElementById('nav-calls').addEventListener('click', () => showPanel('calls-content'));
+
+            // Add Friend Modal Listener
+            document.getElementById('add-friend-btn').addEventListener('click', () => {
+                showModal('add-friend-modal');
+                document.getElementById('friend-id').value = '';
+                document.getElementById('add-friend-message').textContent = '';
+            });
+
+            document.getElementById('chat-back-btn').addEventListener('click', () => {
+                currentChatPartner = null;
+                // Stop listening to active chat messages (in a real app)
+                showView('main-view');
+            });
+        }
+
+        // Add Friend Logic
+        document.getElementById('add-friend-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const friendId = document.getElementById('friend-id').value.trim();
+            const messageEl = document.getElementById('add-friend-message');
+            messageEl.textContent = '';
+
+            if (friendId === currentProfile.uniqueId) {
+                messageEl.textContent = 'You cannot add yourself!';
+                return;
+            }
+
+            try {
+                const snapshot = await usersRef.orderByChild('uniqueId').equalTo(friendId).once('value');
+                if (!snapshot.exists()) {
+                    messageEl.textContent = 'User not found.';
+                    return;
                 }
-            });
-            
-            // Add all friends
-            friends.forEach(friend => {
-                const friendElement = createFriendElement(friend, false);
-                friendsList.appendChild(friendElement);
-            });
-            
-            // Update counters
-            onlineCount.textContent = onlineCountValue;
-            friendsCount.textContent = friends.length;
-            
-            // Add "Add Friend" button
-            const addFriendElement = document.createElement('div');
-            addFriendElement.className = 'flex items-center justify-between p-2 bg-gray-100 rounded-md cursor-pointer hover:bg-gray-200';
-            addFriendElement.innerHTML = `
-                <div class="flex items-center">
-                    <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                        <i class="fas fa-user-plus"></i>
-                    </div>
-                    <span class="ml-3 font-medium">Add Friend</span>
-                </div>
-            `;
-            addFriendElement.addEventListener('click', showAddFriendModal);
-            friendsList.appendChild(addFriendElement);
-        }
 
-        function createFriendElement(friend, isOnline) {
-            const friendElement = document.createElement('div');
-            friendElement.className = 'flex items-center justify-between p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100';
-            friendElement.addEventListener('click', () => startPrivateChat(friend));
-            
-            friendElement.innerHTML = `
-                <div class="flex items-center">
-                    <div class="relative">
-                        <img src="${friend.avatar}" alt="${friend.username}" class="h-10 w-10 rounded-full object-cover">
-                        ${isOnline ? '<div class="online-dot"></div>' : ''}
-                    </div>
-                    <div class="ml-3">
-                        <p class="font-medium">${friend.username}</p>
-                        <p class="text-xs text-gray-500">${friend.bio || 'No bio'}</p>
-                    </div>
-                </div>
-                ${isOnline ? '<span class="text-xs text-green-600">Online</span>' : '<span class="text-xs text-gray-500">Offline</span>'}
-            `;
-            
-            return friendElement;
-        }
+                const [targetUid, targetProfile] = Object.entries(snapshot.val())[0];
 
-        function updateFriendRequestsCount() {
-            const pendingRequests = friendRequests.filter(req => req.status === 'pending').length;
-            const badge = document.createElement('span');
-            badge.className = 'absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center';
-            badge.textContent = pendingRequests;
-            
-            const existingBadge = document.querySelector('.friend-requests-badge');
-            if (existingBadge) {
-                existingBadge.remove();
+                if (currentProfile.contacts && currentProfile.contacts[targetUid]) {
+                    messageEl.textContent = `${targetProfile.name} is already your friend.`;
+                    return;
+                }
+
+                // Create a request entry in the recipient's node
+                await requestsRef.child(targetUid).child(currentUser.uid).set({
+                    senderUid: currentUser.uid,
+                    senderName: currentProfile.name,
+                    senderEmoji: currentProfile.emoji,
+                    senderUniqueId: currentProfile.uniqueId,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                messageEl.textContent = `Friend request sent to ${targetProfile.name}!`;
+                document.getElementById('friend-id').value = '';
+
+            } catch (error) {
+                messageEl.textContent = 'Error sending request: ' + error.message;
             }
-            
-            if (pendingRequests > 0) {
-                badge.classList.add('friend-requests-badge');
-                const profileButton = document.querySelector('[onclick="showFriendRequests()"]');
-                profileButton.parentNode.appendChild(badge);
-            }
-        }
+        });
 
-        // Chat Functions
-        function switchChat(type) {
-            currentChat = type;
-            
-            if (type === 'global') {
-                globalChatBtn.classList.add('active-tab');
-                globalChatBtn.classList.remove('bg-gray-600');
-                globalChatBtn.classList.add('bg-blue-600');
-                
-                privateChatBtn.classList.remove('active-tab');
-                privateChatBtn.classList.add('bg-gray-600');
-                privateChatBtn.classList.remove('bg-blue-600');
-                
-                chatHeaderInfo.innerHTML = '<i class="fas fa-globe text-xl mr-3"></i><h2 class="text-xl font-semibold">Global Chat</h2>';
-                loadGlobalMessages();
-            } else {
-                privateChatBtn.classList.add('active-tab');
-                privateChatBtn.classList.remove('bg-gray-600');
-                privateChatBtn.classList.add('bg-blue-600');
-                
-                globalChatBtn.classList.remove('active-tab');
-                globalChatBtn.classList.add('bg-gray-600');
-                globalChatBtn.classList.remove('bg-blue-600');
-                
-                if (selectedFriend) {
-                    chatHeaderInfo.innerHTML = `
-                        <img src="${selectedFriend.avatar}" alt="${selectedFriend.username}" class="h-8 w-8 rounded-full mr-3">
-                        <h2 class="text-xl font-semibold">${selectedFriend.username}</h2>
+        // Listen to Friend Requests
+        function listenToRequests() {
+            requestsRef.child(currentUser.uid).on('value', snapshot => {
+                const requests = snapshot.val() || {};
+                const requestListEl = document.getElementById('request-list');
+                requestListEl.innerHTML = '';
+                let requestCount = 0;
+
+                for (const senderUid in requests) {
+                    requestCount++;
+                    const req = requests[senderUid];
+                    const li = document.createElement('li');
+                    li.className = 'list-item';
+                    li.innerHTML = `
+                        <span class="list-item-emoji">${req.senderEmoji}</span>
+                        <div class="list-item-details">
+                            <span class="name">${req.senderName}</span>
+                            <span class="subtext">Sent you a friend request. ID: ${req.senderUniqueId}</span>
+                        </div>
+                        <div class="list-item-actions">
+                            <button class="accept-btn" data-uid="${senderUid}" data-name="${req.senderName}" data-emoji="${req.senderEmoji}" data-id="${req.senderUniqueId}">Accept</button>
+                            <button class="reject-btn" data-uid="${senderUid}">Reject</button>
+                        </div>
                     `;
-                    loadPrivateMessages();
+                    requestListEl.appendChild(li);
+                }
+
+                // Update badge
+                const updatesBadge = document.getElementById('updates-badge');
+                if (requestCount > 0) {
+                    updatesBadge.textContent = requestCount;
+                    updatesBadge.classList.add('visible');
                 } else {
-                    chatHeaderInfo.innerHTML = '<i class="fas fa-user-friends text-xl mr-3"></i><h2 class="text-xl font-semibold">Private Chat</h2>';
-                    chatMessages.innerHTML = `
-                        <div class="text-center text-gray-500 py-10">
-                            <i class="fas fa-user-friends text-4xl mb-2"></i>
-                            <p>Select a friend to start chatting</p>
-                        </div>
-                    `;
+                    updatesBadge.classList.remove('visible');
                 }
-            }
-        }
 
-        function startPrivateChat(friend) {
-            selectedFriend = friend;
-            switchChat('private');
-        }
-
-        function loadGlobalMessages() {
-            // For demo, create some sample messages
-            if (messages.length === 0) {
-                messages = [
-                    { id: 1, sender: users[0], text: 'Hello everyone!', timestamp: new Date(Date.now() - 3600000) },
-                    { id: 2, sender: users[1], text: 'Hi there! How are you all doing?', timestamp: new Date(Date.now() - 1800000) },
-                    { id: 3, sender: users[2], text: 'This chat app is pretty cool!', timestamp: new Date(Date.now() - 900000) }
-                ];
-            }
-            
-            renderMessages(messages);
-        }
-
-        function loadPrivateMessages() {
-            if (!selectedFriend) return;
-            
-            // For demo, create some sample private messages
-            const privateChatId = [currentUser.id, selectedFriend.id].sort().join('-');
-            let chat = privateMessages.find(c => c.id === privateChatId);
-            
-            if (!chat) {
-                chat = {
-                    id: privateChatId,
-                    participants: [currentUser, selectedFriend],
-                    messages: [
-                        { id: 1, sender: selectedFriend, text: `Hi ${currentUser.username}!`, timestamp: new Date(Date.now() - 3600000) },
-                        { id: 2, sender: currentUser, text: 'Hello there! How are you?', timestamp: new Date(Date.now() - 1800000) },
-                        { id: 3, sender: selectedFriend, text: "I'm doing great, thanks for asking!", timestamp: new Date(Date.now() - 900000) }
-                    ]
-                };
-                privateMessages.push(chat);
-            }
-            
-            renderMessages(chat.messages);
-        }
-
-        function renderMessages(messagesToRender) {
-            chatMessages.innerHTML = '';
-            
-            if (messagesToRender.length === 0) {
-                chatMessages.innerHTML = `
-                    <div class="text-center text-gray-500 py-10">
-                        <i class="fas fa-comments text-4xl mb-2"></i>
-                        <p>No messages yet. Be the first to say hello!</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            messagesToRender.forEach(message => {
-                const isCurrentUser = message.sender.id === currentUser.id;
-                const messageElement = document.createElement('div');
-                messageElement.className = `chat-message mb-4 flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`;
-                
-                messageElement.innerHTML = `
-                    <div class="flex ${isCurrentUser ? 'flex-row-reverse' : ''} max-w-xs md:max-w-md">
-                        <img src="${message.sender.avatar}" alt="${message.sender.username}" class="h-8 w-8 rounded-full ${isCurrentUser ? 'ml-3' : 'mr-3'}">
-                        <div>
-                            <div class="${isCurrentUser ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'} rounded-lg py-2 px-4">
-                                <p>${message.text}</p>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-1 ${isCurrentUser ? 'text-right' : ''}">
-                                ${formatTime(message.timestamp)}
-                            </p>
-                        </div>
-                    </div>
-                `;
-                
-                chatMessages.appendChild(messageElement);
+                document.querySelectorAll('.accept-btn').forEach(btn => btn.addEventListener('click', acceptFriendRequest));
+                document.querySelectorAll('.reject-btn:not(.unblock-btn)').forEach(btn => btn.addEventListener('click', rejectFriendRequest));
             });
-            
-            // Scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        function sendMessage() {
-            const text = messageInput.value.trim();
-            if (!text) return;
-            
-            if (currentChat === 'global') {
-                const newMessage = {
-                    id: messages.length + 1,
-                    sender: currentUser,
-                    text,
-                    timestamp: new Date()
-                };
-                messages.push(newMessage);
-                renderMessages(messages);
-            } else if (currentChat === 'private' && selectedFriend) {
-                const privateChatId = [currentUser.id, selectedFriend.id].sort().join('-');
-                let chat = privateMessages.find(c => c.id === privateChatId);
-                
-                if (!chat) {
-                    chat = {
-                        id: privateChatId,
-                        participants: [currentUser, selectedFriend],
-                        messages: []
-                    };
-                    privateMessages.push(chat);
-                }
-                
-                const newMessage = {
-                    id: chat.messages.length + 1,
-                    sender: currentUser,
-                    text,
-                    timestamp: new Date()
-                };
-                chat.messages.push(newMessage);
-                renderMessages(chat.messages);
-            }
-            
-            messageInput.value = '';
+        // Accept Friend Request Logic
+        async function acceptFriendRequest(e) {
+            const senderUid = e.target.getAttribute('data-uid');
+            const senderName = e.target.getAttribute('data-name');
+            const senderEmoji = e.target.getAttribute('data-emoji');
+            const senderUniqueId = e.target.getAttribute('data-id');
+
+            // 1. Remove the request
+            await requestsRef.child(currentUser.uid).child(senderUid).remove();
+
+            // 2. Add sender to current user's contacts
+            await usersRef.child(currentUser.uid).child('contacts').child(senderUid).set({
+                name: senderName,
+                emoji: senderEmoji,
+                uniqueId: senderUniqueId
+            });
+
+            // 3. Add current user to sender's contacts
+            await usersRef.child(senderUid).child('contacts').child(currentUser.uid).set({
+                name: currentProfile.name,
+                emoji: currentProfile.emoji,
+                uniqueId: currentProfile.uniqueId
+            });
+
+            alert(`You are now friends with ${senderName}!`);
         }
 
-        function formatTime(date) {
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        // Reject Friend Request Logic
+        async function rejectFriendRequest(e) {
+            const senderUid = e.target.getAttribute('data-uid');
+            await requestsRef.child(currentUser.uid).child(senderUid).remove();
         }
 
-        // Profile Functions
-        function toggleProfileDropdown() {
-            document.getElementById('profileDropdown').classList.toggle('hidden');
-        }
-
-        function showProfileSettings() {
-            document.getElementById('profileUsername').value = currentUser.username;
-            document.querySelector(`input[name="gender"][value="${currentUser.gender}"]`).checked = true;
-            document.getElementById('profileBio').value = currentUser.bio || '';
-            document.getElementById('profilePicPreview').src = currentUser.avatar;
+        // Listen to Contacts to populate Chat List
+        function listenToContacts(contacts) {
+            const contactListEl = document.getElementById('contact-list');
+            contactListEl.innerHTML = '';
             
-            profileModal.classList.remove('hidden');
-            document.getElementById('profileDropdown').classList.add('hidden');
-        }
-
-        function hideProfileSettings() {
-            profileModal.classList.add('hidden');
-        }
-
-        function updateProfile() {
-            const username = document.getElementById('profileUsername').value;
-            const gender = document.querySelector('input[name="gender"]:checked').value;
-            const bio = document.getElementById('profileBio').value;
-            
-            if (!username) {
-                alert('Username cannot be empty');
-                return;
-            }
-            
-            // Update current user
-            currentUser.username = username;
-            currentUser.gender = gender;
-            currentUser.bio = bio;
-            
-            // Update in users array
-            const userIndex = users.findIndex(u => u.id === currentUser.id);
-            if (userIndex !== -1) {
-                users[userIndex] = { ...currentUser };
-            }
-            
-            // Update UI
-            currentUsername.textContent = username;
-            localStorage.setItem('demoUser', JSON.stringify(currentUser));
-            
-            hideProfileSettings();
-        }
-
-        // Friend Request Functions
-        function showFriendRequests() {
-            // Clear existing requests
-            friendRequestsList.innerHTML = '';
-            
-            // Add pending requests
-            const pendingRequests = friendRequests.filter(req => req.status === 'pending');
-            
-            if (pendingRequests.length === 0) {
-                friendRequestsList.innerHTML = `
-                    <div class="text-center py-10 text-gray-500">
-                        <i class="fas fa-user-friends text-4xl mb-2"></i>
-                        <p>No pending friend requests</p>
+            for (const uid in contacts) {
+                const contact = contacts[uid];
+                const li = document.createElement('li');
+                li.className = 'list-item contact-item';
+                li.setAttribute('data-uid', uid);
+                li.setAttribute('data-name', contact.name);
+                li.setAttribute('data-emoji', contact.emoji);
+                li.innerHTML = `
+                    <span class="list-item-emoji">${contact.emoji}</span>
+                    <div class="list-item-details">
+                        <span class="name">${contact.name}</span>
+                        <span class="subtext last-message">Start chatting!</span>
                     </div>
                 `;
-            } else {
-                pendingRequests.forEach(request => {
-                    const requestElement = document.createElement('div');
-                    requestElement.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-md';
-                    
-                    requestElement.innerHTML = `
-                        <div class="flex items-center">
-                            <img src="${request.from.avatar}" alt="${request.from.username}" class="h-10 w-10 rounded-full">
-                            <div class="ml-3">
-                                <p class="font-medium">${request.from.username}</p>
-                                <p class="text-xs text-gray-500">Wants to be your friend</p>
-                            </div>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button class="px-3 py-1 bg-green-500 text-white rounded-md text-sm" onclick="acceptFriendRequest(${request.from.id})">
-                                Accept
-                            </button>
-                            <button class="px-3 py-1 bg-red-500 text-white rounded-md text-sm" onclick="declineFriendRequest(${request.from.id})">
-                                Decline
-                            </button>
-                        </div>
-                    `;
-                    
-                    friendRequestsList.appendChild(requestElement);
+                contactListEl.appendChild(li);
+            }
+
+            document.querySelectorAll('.contact-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const targetUid = item.getAttribute('data-uid');
+                    const targetName = item.getAttribute('data-name');
+                    const targetEmoji = item.getAttribute('data-emoji');
+                    openChat(targetUid, targetName, targetEmoji);
                 });
-            }
-            
-            friendRequestsModal.classList.remove('hidden');
-            document.getElementById('profileDropdown').classList.add('hidden');
+            });
+
+            // Start message listeners for all contacts to get last message for display
+            // (In a real app, optimize this to listen only to necessary data)
+            // (For this mock, we skip last message and focus on the main chat view)
         }
 
-        function hideFriendRequests() {
-            friendRequestsModal.classList.add('hidden');
+        // Open Chat View and Start Message Listener
+        function openChat(partnerUid, partnerName, partnerEmoji) {
+            currentChatPartner = partnerUid;
+            showView('chat-view');
+
+            // Update chat header
+            document.getElementById('chat-partner-emoji').textContent = partnerEmoji;
+            document.getElementById('chat-partner-name').textContent = partnerName;
+
+            // Clear messages and start listener
+            const chatMessagesEl = document.getElementById('chat-messages');
+            chatMessagesEl.innerHTML = '';
+            
+            // Generate chat ID (sorted UIDs for a unique, shared key)
+            const chatId = [currentUser.uid, partnerUid].sort().join('_');
+
+            // **Message Listener**
+            messagesRef.child(chatId).on('child_added', snapshot => {
+                const message = snapshot.val();
+                appendMessage(message, currentUser.uid);
+            });
+
+            // Clear unread count for this partner
+            unreadCountsRef.child(currentUser.uid).child(partnerUid).remove();
         }
 
-        function acceptFriendRequest(friendId) {
-            const friend = users.find(u => u.id === friendId);
-            if (friend && !friends.some(f => f.id === friendId)) {
-                friends.push(friend);
-            }
+        // Append a single message bubble to the chat view
+        function appendMessage(message, myUid) {
+            const chatMessagesEl = document.getElementById('chat-messages');
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.classList.add(message.senderId === myUid ? 'message-sent' : 'message-received');
             
-            // Update request status
-            const requestIndex = friendRequests.findIndex(req => req.from.id === friendId);
-            if (requestIndex !== -1) {
-                friendRequests[requestIndex].status = 'accepted';
-            }
-            
-            updateFriendsList();
-            updateFriendRequestsCount();
-            hideFriendRequests();
-        }
+            const time = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-        function declineFriendRequest(friendId) {
-            // Update request status
-            const requestIndex = friendRequests.findIndex(req => req.from.id === friendId);
-            if (requestIndex !== -1) {
-                friendRequests[requestIndex].status = 'declined';
-            }
-            
-            updateFriendRequestsCount();
-            hideFriendRequests();
-        }
-
-        // Add Friend Functions
-        function showAddFriendModal() {
-            addFriendModal.classList.remove('hidden');
-            searchResults.innerHTML = `
-                <div class="text-center py-10 text-gray-500">
-                    <i class="fas fa-search text-4xl mb-2"></i>
-                    <p>Search for users to add as friends</p>
-                </div>
+            bubble.innerHTML = `
+                <span>${message.text}</span>
+                <span class="message-time">${time}</span>
             `;
+
+            chatMessagesEl.appendChild(bubble);
+            // Scroll to bottom
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         }
 
-        function hideAddFriendModal() {
-            addFriendModal.classList.add('hidden');
+        // Sending Messages
+        document.getElementById('chat-send-btn').addEventListener('click', async () => {
+            const inputEl = document.getElementById('chat-input');
+            const text = inputEl.value.trim();
+
+            if (!text || !currentChatPartner) return;
+
+            const chatId = [currentUser.uid, currentChatPartner].sort().join('_');
+            const newMessageRef = messagesRef.child(chatId).push();
+            const messageKey = newMessageRef.key;
+
+            const message = {
+                messageId: messageKey,
+                senderId: currentUser.uid,
+                recipientId: currentChatPartner,
+                text: text,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            // 1. Write message
+            await newMessageRef.set(message);
+
+            // 2. Update recipient's unread count
+            const recipientUnreadRef = unreadCountsRef.child(currentChatPartner).child(currentUser.uid);
+            recipientUnreadRef.transaction((currentCount) => {
+                return (currentCount || 0) + 1;
+            });
+
+            inputEl.value = '';
+        });
+
+        // Listen for Unread Counts (for badges)
+        function listenToUnreadCounts() {
+            unreadCountsRef.child(currentUser.uid).on('value', snapshot => {
+                const counts = snapshot.val() || {};
+                let totalUnread = 0;
+                for (const partnerUid in counts) {
+                    totalUnread += counts[partnerUid];
+                }
+
+                const chatBadge = document.getElementById('chat-badge');
+                if (totalUnread > 0) {
+                    chatBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+                    chatBadge.classList.add('visible');
+                } else {
+                    chatBadge.classList.remove('visible');
+                }
+            });
         }
 
-        function searchUser() {
-            const query = document.getElementById('friendUsername').value.trim().toLowerCase();
-            if (!query) return;
-            
-            // Filter users who are not already friends and not the current user
-            const results = users.filter(user => 
-                user.username.toLowerCase().includes(query) && 
-                user.id !== currentUser.id && 
-                !friends.some(f => f.id === user.id) &&
-                !friendRequests.some(req => req.from.id === user.id && req.status === 'pending')
-            );
-            
-            // Display results
-            searchResults.innerHTML = '';
-            
-            if (results.length === 0) {
-                searchResults.innerHTML = `
-                    <div class="text-center py-10 text-gray-500">
-                        <i class="fas fa-user-times text-4xl mb-2"></i>
-                        <p>No users found</p>
-                    </div>
-                `;
-            } else {
-                results.forEach(user => {
-                    const userElement = document.createElement('div');
-                    userElement.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-md';
-                    
-                    userElement.innerHTML = `
-                        <div class="flex items-center">
-                            <img src="${user.avatar}" alt="${user.username}" class="h-10 w-10 rounded-full">
-                            <div class="ml-3">
-                                <p class="font-medium">${user.username}</p>
-                                <p class="text-xs text-gray-500">${user.bio || 'No bio'}</p>
-                            </div>
+        // Listen to Call Logs
+        function listenToCallLogs() {
+            callLogsRef.child(currentUser.uid).orderByChild('timestamp').limitToLast(20).on('value', snapshot => {
+                const logs = snapshot.val() || {};
+                const logListEl = document.getElementById('call-log-list');
+                logListEl.innerHTML = '';
+                let missedCallCount = 0;
+
+                const sortedLogs = Object.values(logs).sort((a, b) => b.timestamp - a.timestamp);
+
+                for (const log of sortedLogs) {
+                    const partner = log.partner;
+                    const isIncoming = log.direction === 'incoming';
+                    const isMissed = isIncoming && log.status === 'missed';
+
+                    if (isMissed) missedCallCount++;
+
+                    const li = document.createElement('li');
+                    li.className = 'list-item';
+                    li.innerHTML = `
+                        <span class="list-item-emoji">${partner.emoji}</span>
+                        <div class="list-item-details">
+                            <span class="name ${isMissed ? 'missed-call' : ''}">${partner.name}</span>
+                            <span class="subtext">
+                                ${isIncoming ? 'Incoming' : 'Outgoing'} ${log.type} Call - 
+                                ${isMissed ? 'Missed' : (log.duration ? `${log.duration}s` : log.status)}
+                            </span>
                         </div>
-                        <button class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm" onclick="sendFriendRequest(${user.id})">
-                            Add Friend
-                        </button>
+                        <div class="list-item-actions">
+                            <button class="icon-btn" style="color: ${log.type === 'video' ? '#34B7F1' : '#008069'};">
+                                <svg viewBox="0 0 24 24"><path d="${log.type === 'video' ? 'M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z' : 'M20,15.5C18.8,15.5 17.58,15.34 16.37,14.97C15.97,14.85 15.44,14.95 15.12,15.27L13.12,17.27C10.5,16.17 8.17,13.43 7.12,10.74L9.12,8.73C9.44,8.41 9.54,7.87 9.42,7.47C9.05,6.26 8.89,5 8.89,3.8C8.89,3.31 8.48,3 8,3H4C3.47,3 3,3.47 3,4C3,13.63 10.37,21 20,21C20.53,21 21,20.53 21,20V16.11C21,15.62 20.69,15.5 20,15.5Z'}"/></svg>
+                            </button>
+                        </div>
                     `;
-                    
-                    searchResults.appendChild(userElement);
-                });
-            }
+                    logListEl.appendChild(li);
+                }
+
+                // Update calls badge
+                const callsBadge = document.getElementById('calls-badge');
+                if (missedCallCount > 0) {
+                    callsBadge.textContent = missedCallCount;
+                    callsBadge.classList.add('visible');
+                } else {
+                    callsBadge.classList.remove('visible');
+                }
+            });
         }
 
-        function sendFriendRequest(userId) {
-            const user = users.find(u => u.id === userId);
-            if (user) {
-                // In a real app, this would be sent to the server
-                // For demo, we'll just add it to our local requests
-                friendRequests.push({
-                    from: currentUser,
-                    to: user,
-                    status: 'pending'
-                });
-                
-                alert(`Friend request sent to ${user.username}`);
-                hideAddFriendModal();
-            }
-        }
+        // --- 4. WebRTC Calling Logic ---
 
-        // Handle profile picture upload
-        document.getElementById('profilePicUpload').addEventListener('change', function(e) {
-            if (e.target.files && e.target.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    document.getElementById('profilePicPreview').src = event.target.result;
-                    currentUserAvatar.src = event.target.result;
-                    currentUser.avatar = event.target.result;
-                    localStorage.setItem('demoUser', JSON.stringify(currentUser));
+        const servers = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        // Call button listeners (for active chat partner)
+        document.getElementById('voice-call-btn').addEventListener('click', () => startCall('audio'));
+        document.getElementById('video-call-btn').addEventListener('click', () => startCall('video'));
+
+        // End call button listeners
+        document.getElementById('end-call-btn').addEventListener('click', () => endCall('declined', currentCallId));
+        document.getElementById('end-voice-btn').addEventListener('click', () => endCall('declined', currentCallId));
+
+        // Incoming call modal buttons
+        document.getElementById('incoming-call-accept-btn').addEventListener('click', () => acceptIncomingCall());
+        document.getElementById('incoming-call-reject-btn').addEventListener('click', () => rejectIncomingCall());
+
+        /** Logs the call and cleans up call data. */
+        function logCall(status, callId, duration = null) {
+            if (!callId) return;
+            callsRef.child(callId).once('value').then(snapshot => {
+                const call = snapshot.val();
+                if (!call) return;
+
+                // Determine direction and partner
+                const isCaller = call.callerId === currentUser.uid;
+                const partnerUid = isCaller ? call.calleeId : call.callerId;
+                const partnerProfile = isCaller ? call.callee : call.caller;
+
+                const logEntry = {
+                    callId: callId,
+                    direction: isCaller ? 'outgoing' : 'incoming',
+                    type: call.type,
+                    status: status, // 'completed', 'missed', 'declined'
+                    duration: duration,
+                    partner: partnerProfile,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
                 };
-                reader.readAsDataURL(e.target.files[0]);
+
+                // Write to log
+                callLogsRef.child(currentUser.uid).push(logEntry);
+
+                // Only the caller or acceptor should remove the call and ICE candidates
+                if (isCaller || status === 'completed' || status === 'declined') {
+                    callsRef.child(callId).remove();
+                    iceCandidatesRef.child(callId).remove();
+                }
+            });
+        }
+
+        /** Cleans up media and connection. */
+        function cleanupCall() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
             }
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            ringtone.pause();
+            ringtone.currentTime = 0;
+            currentCallId = null;
+        }
+
+        /** Ends the call and logs it. */
+        function endCall(status, callId) {
+            if (!callId) return;
+
+            logCall(status, callId); // Log for the current user
+
+            // Log for the other user (if the call didn't complete/reject properly)
+            // (In a real app, use a cloud function or a more robust status system)
+
+            cleanupCall();
+            showView('chat-view'); // Return to the chat view
+        }
+
+        /** STARTS a call and writes the offer to the DB. */
+        async function startCall(type) {
+            if (!currentChatPartner || currentCallId) return;
+
+            const partnerData = await usersRef.child(currentChatPartner).once('value');
+            if (!partnerData.exists()) return alert('Partner not found.');
+            const partnerProfile = partnerData.val();
+
+            isVideoCall = (type === 'video');
+
+            // 1. Get user media
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: isVideoCall,
+                    audio: true
+                });
+            } catch (error) {
+                console.error("Error accessing media devices.", error);
+                return alert("Permission denied or media device not available.");
+            }
+
+            // Show appropriate call view
+            if (isVideoCall) {
+                document.getElementById('local-video').srcObject = localStream;
+                document.getElementById('video-caller-emoji').textContent = partnerProfile.emoji;
+                document.getElementById('video-caller-name').textContent = `Calling ${partnerProfile.name}...`;
+                showView('video-call-view');
+            } else {
+                document.getElementById('voice-caller-emoji').textContent = partnerProfile.emoji;
+                document.getElementById('voice-caller-name').textContent = `Calling ${partnerProfile.name}...`;
+                showView('voice-call-view');
+            }
+            ringtone.play(); // Play outgoing ringtone
+
+            // 2. Create PeerConnection
+            peerConnection = new RTCPeerConnection(servers);
+
+            // Add local tracks to peer connection
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            // Set up ICE candidate listener (Caller side)
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    iceCandidatesRef.child(currentCallId).child('caller').push(event.candidate);
+                }
+            };
+
+            // Set up remote stream listener
+            peerConnection.ontrack = (event) => {
+                const stream = event.streams[0];
+                if (isVideoCall) {
+                    document.getElementById('remote-video').srcObject = stream;
+                } else {
+                    document.getElementById('remote-audio').srcObject = stream;
+                }
+                ringtone.pause(); // Stop ringtone when remote track is received
+            };
+
+            // 3. Create Offer
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+
+            // 4. Write call data to database
+            const newCallRef = callsRef.child(currentChatPartner).push();
+            currentCallId = newCallRef.key;
+
+            const callData = {
+                callId: currentCallId,
+                type: type,
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                callerId: currentUser.uid,
+                calleeId: currentChatPartner,
+                offer: offer,
+                caller: { uid: currentUser.uid, name: currentProfile.name, emoji: currentProfile.emoji },
+                callee: { uid: partnerProfile.uid, name: partnerProfile.name, emoji: partnerProfile.emoji }
+            };
+            await newCallRef.set(callData);
+
+            // 5. Listen for Callee's ICE candidates
+            iceCandidatesRef.child(currentCallId).child('callee').on('child_added', snapshot => {
+                peerConnection.addIceCandidate(new RTCIceCandidate(snapshot.val()));
+            });
+
+            // 6. Listen for Answer
+            callsRef.child(currentChatPartner).child(currentCallId).on('value', snapshot => {
+                const call = snapshot.val();
+                if (call && call.answer && peerConnection.remoteDescription.type !== 'answer') {
+                    peerConnection.setRemoteDescription(new RTCSessionDescription(call.answer));
+                    // Start call timer/update UI that call is connected
+                } else if (!call) {
+                    // Call was removed (rejected or ended by other party)
+                    if (currentCallId === snapshot.key) { // Ensure it's the current call
+                         alert(`${partnerProfile.name} ended the call.`);
+                         cleanupCall();
+                         showView('chat-view');
+                    }
+                }
+            });
+        }
+
+        /** Listens for incoming calls addressed to the current user. */
+        function listenToIncomingCalls() {
+            callsRef.child(currentUser.uid).on('child_added', async snapshot => {
+                const call = snapshot.val();
+                if (!call || call.callerId === currentUser.uid) return; // Ignore own outgoing call echo
+
+                currentCallId = call.callId;
+                isVideoCall = call.type === 'video';
+
+                // Check if caller is blocked
+                if (currentProfile.blocked && currentProfile.blocked[call.callerId]) {
+                    // Automatically reject and log as missed/blocked
+                    logCall('blocked', currentCallId);
+                    callsRef.child(currentUser.uid).child(snapshot.key).remove();
+                    return;
+                }
+
+                // Play ringtone and show modal
+                ringtone.play();
+                document.getElementById('incoming-caller-emoji').textContent = call.caller.emoji;
+                document.getElementById('incoming-caller-name').textContent = call.caller.name;
+                document.getElementById('incoming-call-type').textContent = `${call.type} call`;
+                showModal('incoming-call-modal');
+            });
+
+            // Listen for call removal (if caller hangs up before reject/accept)
+            callsRef.child(currentUser.uid).on('child_removed', snapshot => {
+                const call = snapshot.val();
+                if (call && currentCallId === call.callId) {
+                    ringtone.pause();
+                    ringtone.currentTime = 0;
+                    showModal('incoming-call-modal', false);
+                    cleanupCall();
+                    alert(`${call.caller.name} canceled the call.`);
+                }
+            });
+        }
+
+        /** ACCEPTS an incoming call and sends the answer. */
+        async function acceptIncomingCall() {
+            const callSnapshot = await callsRef.child(currentUser.uid).child(currentCallId).once('value');
+            const call = callSnapshot.val();
+            if (!call || call.answer) return; // Already answered or invalid
+
+            showModal('incoming-call-modal', false);
+
+            // 1. Get user media
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: isVideoCall,
+                    audio: true
+                });
+            } catch (error) {
+                console.error("Error accessing media devices.", error);
+                logCall('failed', currentCallId);
+                rejectIncomingCall();
+                return alert("Permission denied or media device not available.");
+            }
+
+            // Show appropriate call view
+            if (isVideoCall) {
+                document.getElementById('local-video').srcObject = localStream;
+                document.getElementById('video-caller-emoji').textContent = call.caller.emoji;
+                document.getElementById('video-caller-name').textContent = call.caller.name;
+                showView('video-call-view');
+            } else {
+                document.getElementById('voice-caller-emoji').textContent = call.caller.emoji;
+                document.getElementById('voice-caller-name').textContent = call.caller.name;
+                showView('voice-call-view');
+            }
+            ringtone.pause(); // Stop ringtone
+
+            // 2. Create PeerConnection
+            peerConnection = new RTCPeerConnection(servers);
+
+            // Add local tracks
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            // Set up ICE candidate listener (Callee side)
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    iceCandidatesRef.child(currentCallId).child('callee').push(event.candidate);
+                }
+            };
+
+            // Set up remote stream listener
+            peerConnection.ontrack = (event) => {
+                const stream = event.streams[0];
+                if (isVideoCall) {
+                    document.getElementById('remote-video').srcObject = stream;
+                } else {
+                    document.getElementById('remote-audio').srcObject = stream;
+                }
+            };
+
+            // 3. Set Remote Offer & Create Answer
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(call.offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+
+            // 4. Update the call entry with the answer
+            await callsRef.child(currentUser.uid).child(currentCallId).update({
+                answer: answer
+            });
+
+            // 5. Add Caller's ICE candidates
+            iceCandidatesRef.child(currentCallId).child('caller').on('child_added', snapshot => {
+                peerConnection.addIceCandidate(new RTCIceCandidate(snapshot.val()));
+            });
+        }
+
+        /** REJECTS an incoming call and removes the call data. */
+        async function rejectIncomingCall() {
+            const callSnapshot = await callsRef.child(currentUser.uid).child(currentCallId).once('value');
+            const call = callSnapshot.val();
+
+            // Log the call as declined
+            if (call) {
+                logCall('declined', currentCallId);
+            }
+
+            // Remove call entry (this triggers 'child_removed' for the caller)
+            await callsRef.child(currentUser.uid).child(currentCallId).remove();
+
+            // Cleanup local state
+            cleanupCall();
+            showModal('incoming-call-modal', false);
+            showView('main-view'); // Return to main view
+        }
+
+        // Draggable Local Video (Minimal implementation)
+        const localVideo = document.getElementById('local-video');
+        let isDragging = false;
+        let offset = { x: 0, y: 0 };
+
+        localVideo.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            localVideo.style.cursor = 'grabbing';
+            offset.x = e.clientX - localVideo.offsetLeft;
+            offset.y = e.clientY - localVideo.offsetTop;
         });
 
-        // Handle Enter key for sending messages
-        messageInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            let newLeft = e.clientX - offset.x;
+            let newTop = e.clientY - offset.y;
+            
+            // Constrain movement within the app container
+            newLeft = Math.max(0, Math.min(appContainer.clientWidth - localVideo.offsetWidth, newLeft));
+            newTop = Math.max(0, Math.min(appContainer.clientHeight - localVideo.offsetHeight, newTop));
+
+            localVideo.style.left = `${newLeft}px`;
+            localVideo.style.top = `${newTop}px`;
         });
 
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('#currentUserAvatar') && !e.target.closest('#profileDropdown')) {
-                document.getElementById('profileDropdown').classList.add('hidden');
-            }
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            localVideo.style.cursor = 'grab';
         });
+
     </script>
 </body>
 </html>
